@@ -222,7 +222,11 @@ function WeightInput({ onWeightChange }) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function simpleHash(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; return String(h); }
 const ADMIN_PASSWORD = "Infinit3Creature2000";
-const store = { async get(k) { try { const r = await window.storage.get(k); return r ? JSON.parse(r.value) : null; } catch { return null; } }, async set(k, v, s) { try { await window.storage.set(k, JSON.stringify(v), s); } catch {} } };
+const store = {
+  async get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  async set(k, v, s) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  async delete(k) { try { localStorage.removeItem(k); } catch {} }
+};
 const getWeekKey = (d) => { const dt = new Date(d), day = dt.getDay(), diff = dt.getDate() - day + (day === 0 ? -6 : 1); return new Date(dt.setDate(diff)).toISOString().split("T")[0]; };
 const todayStr = () => new Date().toISOString().split("T")[0];
 const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -555,7 +559,7 @@ export default function App() {
         <div style={{ padding: "36px 24px 20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <span onClick={handleLogoTap} style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", cursor: "default" }}>Iron Log</span>
-            <button onClick={() => { setUser(null); setWorkouts([]); setCustomExercises([]); store.set('active_session', null); }} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
+            <button onClick={() => { setUser(null); setWorkouts([]); setCustomExercises([]); store.delete('active_session'); }} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
           </div>
           <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700, color: "#151535", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#5080df" }}>{user}</em> 👋</h1>
           <div style={{ background: "rgba(195,208,245,.2)", borderRadius: 40, padding: 5, display: "inline-flex", gap: 2 }}>
