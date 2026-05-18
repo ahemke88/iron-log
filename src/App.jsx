@@ -73,6 +73,7 @@ const PLATE_COLORS = {
 const BAR_OPTIONS = [
   { name: "Standard Bar", short: "45lb Bar", weight: 45 },
   { name: "EZ Curl Bar",  short: "25lb Bar", weight: 25 },
+  { name: "Smith Bar",    short: "20lb Bar", weight: 20 },
   { name: "No Bar",       short: "No Bar",   weight: 0  }
 ];
 
@@ -188,19 +189,25 @@ function DumbbellPicker({ onWeightChange }) {
 function WeightInput({ onWeightChange }) {
   const [mode, setMode] = useState("barbell");
   const [manualVal, setManualVal] = useState("");
-  const MODES = [{ key: "barbell", label: "Plate Loaded" }, { key: "dumbbell", label: "Dumbbell" }, { key: "manual", label: "Manual" }];
+  const MODES = [{ key: "barbell", label: "Plate Loaded" }, { key: "dumbbell", label: "Dumbbell" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
   return (
     <div style={{ background: "rgba(255,255,255,.55)", borderRadius: 18, border: "1.5px solid rgba(255,255,255,.85)", padding: 18 }}>
-      <div style={{ display: "flex", background: "rgba(195,208,245,.2)", borderRadius: 30, padding: 4, marginBottom: 20, gap: 2 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(195,208,245,.2)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
         {MODES.map(m => (
-          <button key={m.key} onClick={() => setMode(m.key)}
-            style={{ flex: 1, padding: "8px 4px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#2d2d4e" : "#a0a8cc", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
+          <button key={m.key} onClick={() => { setMode(m.key); if (m.key === "bodyweight") onWeightChange(0); }}
+            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#2d2d4e" : "#a0a8cc", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
             {m.label}
           </button>
         ))}
       </div>
-      {mode === "barbell"  && <PlateCalculator onWeightChange={onWeightChange} />}
-      {mode === "dumbbell" && <DumbbellPicker  onWeightChange={onWeightChange} />}
+      {mode === "barbell"     && <PlateCalculator onWeightChange={onWeightChange} />}
+      {mode === "dumbbell"    && <DumbbellPicker  onWeightChange={onWeightChange} />}
+      {mode === "bodyweight"  && (
+        <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: "#3050a0", marginBottom: 6 }}>Bodyweight</div>
+          <div style={{ fontSize: 12, color: "#7090c0" }}>Logged as 0 lbs — no added weight</div>
+        </div>
+      )}
       {mode === "manual"   && (
         <div>
           <div className="lbl">Enter Any Weight</div>
@@ -615,8 +622,11 @@ export default function App() {
                     <div key={i} style={{ marginBottom: 24, background: "rgba(255,255,255,.4)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.8)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {s.weight > 0 && <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: "#3050a0" }}>{s.weight} lbs</span>}
+                          <button onClick={() => setSets([...sets.slice(0, i+1), { reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
+                            title="Duplicate set"
+                            style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: "#5080c0", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>⧉</button>
                           {sets.length > 1 && <button className="rm-btn" onClick={() => setSets(sets.filter((_, idx) => idx !== i))}>×</button>}
                         </div>
                       </div>
@@ -735,20 +745,65 @@ export default function App() {
 
                   <div className="glass" style={{ padding: 20, marginBottom: 18 }}>
                     <p style={{ fontSize: 11, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 18 }}>Weekly Volume</p>
-                    {weekProgress.map(([wk, v], i) => {
-                      const isLatest = i === weekProgress.length - 1;
+                    {(() => {
+                      const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0","#f0b8a8","#a8f0d0"];
+                      const svgW = 320, svgH = 200;
+                      const pad = { top: 16, right: 16, bottom: 48, left: 52 };
+                      const chartW = svgW - pad.left - pad.right;
+                      const chartH = svgH - pad.top - pad.bottom;
+                      const n = weekProgress.length;
+                      const barW = Math.min(40, (chartW / n) * 0.55);
+                      const gap = chartW / n;
+                      const yMax = maxVol * 1.15;
+                      const yTicks = 4;
+                      const getLabel = (wk, i) => {
+                        if (i === n - 1) return "Now";
+                        if (i === n - 2) return "Last";
+                        const d = new Date(wk);
+                        return `${d.getMonth()+1}/${d.getDate()}`;
+                      };
                       return (
-                        <div key={wk} style={{ marginBottom: 16 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: isLatest ? "#1a1a3e" : "#a0a8cc" }}>{isLatest ? "This week" : i === weekProgress.length - 2 ? "Last week" : `Wk of ${wk}`}</span>
-                            <span style={{ fontSize: 12, color: "#b0b8d8" }}>{v.totalVol.toLocaleString()} lbs</span>
-                          </div>
-                          <div className="bar-bg">
-                            <div className="bar-fg" style={{ width: `${(v.totalVol / maxVol) * 100}%`, background: isLatest ? "linear-gradient(90deg,#a8c8ff,#a8f0c0)" : "linear-gradient(90deg,rgba(168,200,255,.35),rgba(168,240,192,.35))" }} />
-                          </div>
-                        </div>
+                        <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
+                          {/* Y grid lines + labels */}
+                          {Array.from({ length: yTicks + 1 }, (_, ti) => {
+                            const val = Math.round((yMax / yTicks) * ti);
+                            const y = pad.top + chartH - (val / yMax) * chartH;
+                            return (
+                              <g key={ti}>
+                                <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(160,180,230,.2)" strokeWidth="1" strokeDasharray="4,3" />
+                                <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#a0a8cc" fontFamily="DM Sans, sans-serif">
+                                  {val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}
+                                </text>
+                              </g>
+                            );
+                          })}
+                          {/* Axes */}
+                          <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(160,180,230,.4)" strokeWidth="1.5" />
+                          <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(160,180,230,.4)" strokeWidth="1.5" />
+                          {/* Y axis label */}
+                          <text x={12} y={pad.top + chartH / 2} textAnchor="middle" fontSize="9" fill="#a0a8cc" fontFamily="DM Sans, sans-serif" transform={`rotate(-90, 12, ${pad.top + chartH / 2})`}>Volume (lbs)</text>
+                          {/* Bars */}
+                          {weekProgress.map(([wk, v], i) => {
+                            const barH = (v.totalVol / yMax) * chartH;
+                            const x = pad.left + gap * i + gap / 2 - barW / 2;
+                            const y = pad.top + chartH - barH;
+                            const isLatest = i === n - 1;
+                            const color = BAR_COLORS[i % BAR_COLORS.length];
+                            return (
+                              <g key={wk}>
+                                <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#6090e0" : color} opacity={isLatest ? 1 : 0.75} />
+                                <text x={x + barW / 2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="9" fill={isLatest ? "#3050a0" : "#a0a8cc"} fontFamily="DM Sans, sans-serif" fontWeight={isLatest ? "700" : "400"}>
+                                  {getLabel(wk, i)}
+                                </text>
+                                <text x={x + barW / 2} y={y - 4} textAnchor="middle" fontSize="8" fill={isLatest ? "#3050a0" : "#8090b8"} fontFamily="DM Sans, sans-serif">
+                                  {v.totalVol >= 1000 ? `${(v.totalVol/1000).toFixed(1)}k` : v.totalVol}
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </svg>
                       );
-                    })}
+                    })()}
                   </div>
 
                   {/* Top sets table */}
