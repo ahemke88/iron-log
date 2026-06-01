@@ -440,7 +440,7 @@ export default function App() {
   const [customExercises, setCustomExercises] = useState([]); // { name, category }[]
   const [selectedExercise, setSelectedExercise] = useState("Bench Press");
   const [customEx, setCustomEx] = useState(""); const [customExCategory, setCustomExCategory] = useState("Chest");
-  const [sets, setSets] = useState([{ reps: "8", weight: 0 }]);
+  const [sets, setSets] = useState([{ id: Date.now(), reps: "8", weight: 0 }]);
   const [date, setDate] = useState(todayStr()); const [saved, setSaved] = useState(false);
   const [activeExercise, setActiveExercise] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false); const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -500,7 +500,7 @@ export default function App() {
     const updated = [...workouts, newW];
     setWorkouts(updated);
     await store.set(`workouts:${user}`, updated);
-    setSets([{ reps: "8", weight: 0 }]);
+    setSets([{ id: Date.now(), reps: "8", weight: 0 }]);
     setCustomEx(""); setSaved(true); setTimeout(() => setSaved(false), 2200);
   };
 
@@ -566,7 +566,10 @@ export default function App() {
         <div style={{ padding: "36px 24px 20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <span onClick={handleLogoTap} style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", cursor: "default" }}>Iron Log</span>
-            <button onClick={() => { setUser(null); setWorkouts([]); setCustomExercises([]); store.delete('active_session'); }} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button onClick={() => window.location.reload()} title="Refresh app" style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 12px", fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: "#a0a8cc", cursor: "pointer" }}>↺</button>
+              <button onClick={() => { setUser(null); setWorkouts([]); setCustomExercises([]); store.delete('active_session'); }} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
+            </div>
           </div>
           <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700, color: "#151535", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#5080df" }}>{user}</em> 👋</h1>
           <div style={{ background: "rgba(195,208,245,.2)", borderRadius: 40, padding: 5, display: "inline-flex", gap: 2 }}>
@@ -619,12 +622,12 @@ export default function App() {
                 <div style={{ marginBottom: 22 }}>
                   <label className="lbl">Sets</label>
                   {sets.map((s, i) => (
-                    <div key={i} style={{ marginBottom: 24, background: "rgba(255,255,255,.4)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.8)" }}>
+                    <div key={s.id} style={{ marginBottom: 24, background: "rgba(255,255,255,.4)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.8)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {s.weight > 0 && <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: "#3050a0" }}>{s.weight} lbs</span>}
-                          <button onClick={() => setSets([...sets.slice(0, i+1), { reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
+                          <button onClick={() => setSets([...sets.slice(0, i+1), { id: Date.now(), reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
                             title="Duplicate set"
                             style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: "#5080c0", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>⧉</button>
                           {sets.length > 1 && <button className="rm-btn" onClick={() => setSets(sets.filter((_, idx) => idx !== i))}>×</button>}
@@ -640,7 +643,7 @@ export default function App() {
                       <WeightInput onWeightChange={v => updateSetWeight(i, v)} />
                     </div>
                   ))}
-                  <button className="add-set-btn" onClick={() => setSets([...sets, { reps: sets[sets.length-1].reps, weight: 0 }])}>+ Add set</button>
+                  <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight }])}>+ Add set</button>
                 </div>
 
                 <button className="save-btn" onClick={saveWorkout}>{saved ? "✓ Saved!" : "Save Workout"}</button>
