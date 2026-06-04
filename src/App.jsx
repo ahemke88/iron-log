@@ -36,23 +36,21 @@ function DrumPicker({ value, onChange, min = 1, max = 100, step = 1, label }) {
     return () => { el.removeEventListener("wheel", handleWheel); el.removeEventListener("touchmove", handleTouchMove); };
   }, [handleWheel, handleTouchMove]);
   const rows = [
-    { val: snap(numVal - step * 2), size: 15, opacity: 0.18, fw: 400 },
-    { val: snap(numVal - step),     size: 21, opacity: 0.32, fw: 500 },
-    { val: numVal,                   size: 34, opacity: 1,    fw: 700, selected: true },
-    { val: snap(numVal + step),     size: 21, opacity: 0.32, fw: 500 },
-    { val: snap(numVal + step * 2), size: 15, opacity: 0.18, fw: 400 },
+    { val: snap(numVal - step * 2), size: 15, opacity: 0.18, fw: 300 },
+    { val: snap(numVal - step),     size: 22, opacity: 0.35, fw: 400 },
+    { val: numVal,                   size: 36, opacity: 1,    fw: 700, selected: true },
+    { val: snap(numVal + step),     size: 22, opacity: 0.35, fw: 400 },
+    { val: snap(numVal + step * 2), size: 15, opacity: 0.18, fw: 300 },
   ];
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
       {label && <div style={{ fontSize: 10, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 6, paddingTop: 10 }}>{label}</div>}
       <div ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={() => { accum.current = 0; }}
         style={{ userSelect: "none", touchAction: "none", cursor: "ns-resize", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
         {rows.map((r, i) => (
           <div key={i} onClick={() => { if (i < 2) change(step * (2 - i)); else if (i > 2) change(-step * (i - 2)); }}
-            style={{ height: r.selected ? 54 : i === 1 || i === 3 ? 40 : 32, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", position: "relative", cursor: r.selected ? "default" : "pointer" }}>
-            {r.selected && <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1.5, background: "linear-gradient(90deg,transparent,rgba(100,130,220,.35),transparent)" }} />}
-            <span style={{ fontSize: r.size, color: `rgba(20,30,160,${r.opacity})`, fontWeight: r.fw, fontFamily: "'Playfair Display',serif", transition: "all .15s" }}>{r.val}</span>
-            {r.selected && <div style={{ position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1.5, background: "linear-gradient(90deg,transparent,rgba(100,130,220,.35),transparent)" }} />}
+            style={{ height: r.selected ? 58 : i === 1 || i === 3 ? 42 : 32, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", cursor: r.selected ? "default" : "pointer" }}>
+            <span style={{ fontSize: r.size, color: `rgba(20,30,160,${r.opacity})`, fontWeight: r.fw, fontFamily: "'Poppins',sans-serif", transition: "all .15s", letterSpacing: r.selected ? "-0.5px" : "0" }}>{r.val}</span>
           </div>
         ))}
       </div>
@@ -101,7 +99,7 @@ function PlateCalculator({ onWeightChange }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {PLATE_SIZES.map(w => { const c = PLATE_COLORS[w]; return (
             <button key={w} onClick={() => setPlates(prev => [...prev, w])}
-              style={{ padding: "10px 14px", borderRadius: 12, border: "none", background: c.bg, color: c.text, fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700, cursor: "pointer", minWidth: 52, boxShadow: "0 2px 8px rgba(0,0,0,.08)" }}>
+              style={{ padding: "10px 14px", borderRadius: 12, border: "none", background: c.bg, color: c.text, fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer", minWidth: 52, boxShadow: "0 2px 8px rgba(0,0,0,.08)" }}>
               {w}
             </button>
           ); })}
@@ -137,7 +135,7 @@ function PlateCalculator({ onWeightChange }) {
       </div>
       <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Total Weight</span>
-        <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
       </div>
     </div>
   );
@@ -157,7 +155,7 @@ function DumbbellPicker({ onWeightChange }) {
         <div style={{ display: "flex", background: "rgba(195,208,245,.2)", borderRadius: 30, padding: 4, width: "fit-content" }}>
           {[false,true].map(val => (
             <button key={String(val)} onClick={() => setCombined(val)}
-              style={{ padding: "8px 16px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 12, fontWeight: 600, background: combined === val ? "rgba(255,255,255,.9)" : "none", color: combined === val ? "#2d2d4e" : "#a0a8cc" }}>
+              style={{ padding: "8px 16px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 12, fontWeight: 600, background: combined === val ? "rgba(255,255,255,.9)" : "none", color: combined === val ? "#1a1a1a" : "#a0a8cc" }}>
               {val ? "Combined Total" : "Single DB"}
             </button>
           ))}
@@ -169,7 +167,7 @@ function DumbbellPicker({ onWeightChange }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {DB_WEIGHTS.map(w => (
             <button key={w} onClick={() => setSelected(w)}
-              style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(180,185,220,.3)"}`, background: selected === w ? "linear-gradient(130deg,rgba(168,200,255,.3),rgba(168,240,192,.2))" : "rgba(255,255,255,.6)", color: selected === w ? "#3060b0" : "#6068a0", fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
+              style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(180,185,220,.3)"}`, background: selected === w ? "linear-gradient(130deg,rgba(168,200,255,.3),rgba(168,240,192,.2))" : "rgba(255,255,255,.6)", color: selected === w ? "#3060b0" : "#6068a0", fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
               {w}
             </button>
           ))}
@@ -178,7 +176,7 @@ function DumbbellPicker({ onWeightChange }) {
       {selected !== null && (
         <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>{combined ? `${selected} + ${selected}` : "Single DB"}</span>
-          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
         </div>
       )}
     </div>
@@ -195,7 +193,7 @@ function WeightInput({ onWeightChange }) {
       <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(195,208,245,.2)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
         {MODES.map(m => (
           <button key={m.key} onClick={() => { setMode(m.key); if (m.key === "bodyweight") onWeightChange(0); }}
-            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#2d2d4e" : "#a0a8cc", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
+            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#1a1a1a" : "#a0a8cc", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
             {m.label}
           </button>
         ))}
@@ -204,7 +202,7 @@ function WeightInput({ onWeightChange }) {
       {mode === "dumbbell"    && <DumbbellPicker  onWeightChange={onWeightChange} />}
       {mode === "bodyweight"  && (
         <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: "#3050a0", marginBottom: 6 }}>Bodyweight</div>
+          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#3050a0", marginBottom: 6 }}>Bodyweight</div>
           <div style={{ fontSize: 12, color: "#7090c0" }}>Logged as 0 lbs — no added weight</div>
         </div>
       )}
@@ -213,11 +211,11 @@ function WeightInput({ onWeightChange }) {
           <div className="lbl">Enter Any Weight</div>
           <p style={{ fontSize: 12, color: "#b0b8d8", marginBottom: 14 }}>For unusual weights like 2.5, 7, 62 lbs etc.</p>
           <input type="number" value={manualVal} onChange={e => { setManualVal(e.target.value); onWeightChange(Number(e.target.value)); }} placeholder="e.g. 7.5"
-            style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 12, color: "#2d2d4e", padding: "11px 15px", width: "100%", fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, outline: "none", textAlign: "center" }} />
+            style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 12, color: "#1a1a1a", padding: "11px 15px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, outline: "none", textAlign: "center" }} />
           {manualVal && (
             <div style={{ marginTop: 14, background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Total Weight</span>
-              <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{manualVal} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{manualVal} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
             </div>
           )}
         </div>
@@ -260,7 +258,7 @@ function findCategory(exerciseName, categories) {
 }
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Poppins:wght@300;400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   .glass{background:rgba(255,255,255,.58);backdrop-filter:blur(18px);border:1.5px solid rgba(255,255,255,.85);border-radius:22px;box-shadow:0 8px 32px rgba(160,185,230,.12)}
   .tab-pill{background:none;border:none;cursor:pointer;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:30px;transition:all .22s;color:#a0a8cc}
@@ -308,7 +306,7 @@ function AdminLoginModal({ onSuccess, onClose }) {
     <div className="overlay">
       <div className="glass" style={{ width: "100%", maxWidth: 340, padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: "#151535" }}>Admin Access</p>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Admin Access</p>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
         </div>
         <p style={{ fontSize: 13, color: "#a0a8cc", marginBottom: 18 }}>Enter your admin password to continue.</p>
@@ -327,7 +325,7 @@ function AdminView({ onClose }) {
     <div className="overlay">
       <div className="glass" style={{ width: "100%", maxWidth: 440, padding: 28, maxHeight: "80vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: "#151535" }}>Subscribers</p>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Subscribers</p>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
         </div>
         {emails === null && <p style={{ color: "#a0a8cc" }}>Loading...</p>}
@@ -336,11 +334,11 @@ function AdminView({ onClose }) {
           <>
             <div style={{ background: "rgba(168,210,245,.1)", border: "1.5px solid rgba(168,210,245,.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 18, display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, color: "#4a7aaf", fontWeight: 600 }}>Total subscribers</span>
-              <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: "#4060d8" }}>{emails.length}</span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#4060d8" }}>{emails.length}</span>
             </div>
             {emails.map((e, i) => (
               <div key={i} style={{ padding: "12px 0", borderBottom: "1px solid rgba(180,195,235,.2)", display: "flex", justifyContent: "space-between" }}>
-                <div><div style={{ fontSize: 14, fontWeight: 600, color: "#2d2d4e" }}>{e.email}</div><div style={{ fontSize: 11, color: "#b0b8d8" }}>@{e.username} · {e.joinedDate}</div></div>
+                <div><div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{e.email}</div><div style={{ fontSize: 11, color: "#b0b8d8" }}>@{e.username} · {e.joinedDate}</div></div>
                 <span style={{ fontSize: 10, background: "rgba(168,240,192,.3)", color: "#3a8060", padding: "3px 10px", borderRadius: 20, fontWeight: 700, alignSelf: "center" }}>Active</span>
               </div>
             ))}
@@ -389,12 +387,12 @@ function LoginScreen({ onLogin }) {
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Progressive Overload Tracker</p>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 40, fontWeight: 700, color: "#151535", lineHeight: 1.1 }}>Your fitness,<br /><em style={{ color: "#5080df" }}>elevated.</em></h1>
+          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 40, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1 }}>Your fitness,<br /><em style={{ color: "#5080df" }}>elevated.</em></h1>
         </div>
         <div className="glass" style={{ padding: 28 }}>
           <div style={{ display: "flex", background: "rgba(195,208,245,.2)", borderRadius: 30, padding: 4, marginBottom: 24 }}>
             {[["login","Sign In"],["signup","Create Account"]].map(([k,l]) => (
-              <button key={k} onClick={() => { setMode(k); setError(""); }} style={{ flex: 1, padding: "9px 0", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 600, background: mode === k ? "rgba(255,255,255,.9)" : "none", color: mode === k ? "#2d2d4e" : "#a0a8cc" }}>{l}</button>
+              <button key={k} onClick={() => { setMode(k); setError(""); }} style={{ flex: 1, padding: "9px 0", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 600, background: mode === k ? "rgba(255,255,255,.9)" : "none", color: mode === k ? "#1a1a1a" : "#a0a8cc" }}>{l}</button>
             ))}
           </div>
           <div style={{ marginBottom: 14 }}><label className="lbl">Username</label><input value={username} onChange={e => setUsername(e.target.value)} placeholder="your_username" onKeyDown={e => e.key === "Enter" && submit()} className="field" /></div>
@@ -427,7 +425,7 @@ function ProgressIndicator({ weekProgress }) {
   if (!indicator) return null;
   return (
     <div className="progress-indicator" style={{ background: indicator.bg, borderColor: indicator.border }}>
-      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: indicator.color, marginBottom: 4 }}>{indicator.msg}</div>
+      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: indicator.color, marginBottom: 4 }}>{indicator.msg}</div>
       <div style={{ fontSize: 13, color: "#6070a0" }}>{indicator.sub}</div>
     </div>
   );
@@ -549,7 +547,7 @@ export default function App() {
     <div style={{ fontFamily: "'DM Sans',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <style>{STYLES}</style><BG />
       <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-        <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: "#151535", marginBottom: 8 }}>Iron Log</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>Iron Log</p>
         <p style={{ fontSize: 13, color: "#a0a8cc" }}>Loading your session...</p>
       </div>
     </div>
@@ -557,7 +555,7 @@ export default function App() {
   if (!user) return <LoginScreen onLogin={handleLogin} />;
 
   return (
-    <div style={{ fontFamily: "'DM Sans',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", color: "#2d2d4e", paddingBottom: 80 }}>
+    <div style={{ fontFamily: "'DM Sans',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", color: "#1a1a1a", paddingBottom: 80 }}>
       <style>{STYLES}</style><BG />
       {showAdminLogin && <AdminLoginModal onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }} onClose={() => setShowAdminLogin(false)} />}
       {showAdmin && <AdminView onClose={() => setShowAdmin(false)} />}
@@ -571,7 +569,7 @@ export default function App() {
               <button onClick={() => { setUser(null); setWorkouts([]); setCustomExercises([]); store.delete('active_session'); }} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
             </div>
           </div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700, color: "#151535", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#5080df" }}>{user}</em> 👋</h1>
+          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 36, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#5080df" }}>{user}</em></h1>
           <div style={{ background: "rgba(195,208,245,.2)", borderRadius: 40, padding: 5, display: "inline-flex", gap: 2 }}>
             {[["log","Log"],["prs","PRs"],["progress","Progress"]].map(([k,l]) => (
               <button key={k} className={`tab-pill ${tab === k ? "tab-on" : ""}`} onClick={() => setTab(k)}>{l}</button>
@@ -585,7 +583,7 @@ export default function App() {
           {tab === "log" && (
             <div className="fade">
               <div className="glass" style={{ padding: 24, marginBottom: 20 }}>
-                <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, color: "#151535", marginBottom: 22 }}>New session</p>
+                <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 22 }}>New session</p>
 
                 <div style={{ marginBottom: 16 }}>
                   <label className="lbl">Date</label>
@@ -626,7 +624,7 @@ export default function App() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {s.weight > 0 && <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: "#3050a0" }}>{s.weight} lbs</span>}
+                          {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#3050a0" }}>{s.weight} lbs</span>}
                           <button onClick={() => setSets([...sets.slice(0, i+1), { id: Date.now(), reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
                             title="Duplicate set"
                             style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: "#5080c0", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>⧉</button>
@@ -635,8 +633,10 @@ export default function App() {
                       </div>
                       <div style={{ marginBottom: 16 }}>
                         <label className="lbl">Reps — swipe up/down</label>
-                        <div className="drum-wrap" style={{ maxWidth: 140 }}>
-                          <DrumPicker value={s.reps} onChange={v => updateSetReps(i, v)} min={1} max={100} step={1} label="Reps" />
+                        <div style={{ display: "flex", justifyContent: "center" }}>
+                          <div className="drum-wrap" style={{ width: 160 }}>
+                            <DrumPicker value={s.reps} onChange={v => updateSetReps(i, v)} min={1} max={100} step={1} label="Reps" />
+                          </div>
                         </div>
                       </div>
                       <label className="lbl">Weight</label>
@@ -651,7 +651,7 @@ export default function App() {
 
               {workouts.length > 0 && (
                 <div>
-                  <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: "#151535", marginBottom: 14 }}>Recent sessions</p>
+                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#1a1a1a", marginBottom: 14 }}>Recent sessions</p>
                   {[...workouts].reverse().slice(0, 4).map(w => (
                     <div key={w.id} className="recent-card">
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
@@ -669,7 +669,7 @@ export default function App() {
           {/* ── PRs TAB ── */}
           {tab === "prs" && (
             <div className="fade">
-              <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, color: "#151535", marginBottom: 6 }}>Personal records</p>
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Personal records</p>
               <p style={{ fontSize: 13, color: "#a0a8cc", marginBottom: 20 }}>Your heaviest lift ever, per exercise.</p>
               {prs.length === 0 && <div className="glass" style={{ padding: 28, textAlign: "center" }}><p style={{ color: "#b0b8d8" }}>No records yet — log some workouts!</p></div>}
               {Object.entries(
@@ -685,11 +685,11 @@ export default function App() {
                   {items.map(([ex, pr], i) => (
                     <div key={ex} className="pr-row" style={{ boxShadow: i === 0 && cat === prs[0]?.[0] ? "0 8px 32px rgba(155,220,175,.28)" : "0 4px 16px rgba(160,185,230,.1)" }}>
                       <div>
-                        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: "#151535", marginBottom: 4 }}>{ex}</div>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>{ex}</div>
                         <div style={{ fontSize: 11, color: "#b0b8d8" }}>Achieved {pr.date}</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 700, color: "#4870df", lineHeight: 1 }}>{pr.weight}</div>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#4870df", lineHeight: 1 }}>{pr.weight}</div>
                         <div style={{ fontSize: 12, color: "#b0b8d8", marginTop: 3 }}>lbs × {pr.reps} reps</div>
                       </div>
                     </div>
@@ -702,7 +702,7 @@ export default function App() {
           {/* ── PROGRESS TAB ── */}
           {tab === "progress" && (
             <div className="fade">
-              <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, color: "#151535", marginBottom: 6 }}>Week-over-week</p>
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Week-over-week</p>
               <p style={{ fontSize: 13, color: "#a0a8cc", marginBottom: 16 }}>Select an exercise to see your progress.</p>
 
               {/* Grouped exercise chips */}
@@ -723,7 +723,7 @@ export default function App() {
               {/* Progress detail */}
               {activeExercise && weekProgress.length > 0 && (
                 <div style={{ marginTop: 8 }}>
-                  <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 700, color: "#151535", marginBottom: 16 }}>{activeExercise}</p>
+                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>{activeExercise}</p>
 
                   <ProgressIndicator weekProgress={weekProgress} />
 
@@ -736,7 +736,7 @@ export default function App() {
                           {[{ label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#4060d8", glow: "rgba(160,185,255,.3)" }, { label: "Total Volume", val: last.totalVol.toLocaleString(), unit: "lbs", diff: last.totalVol - prev.totalVol, color: "#388a5a", glow: "rgba(150,220,180,.3)" }].map(c => (
                             <div key={c.label} className="stat-box" style={{ boxShadow: `0 8px 28px ${c.glow}` }}>
                               <div style={{ fontSize: 10, fontWeight: 700, color: "#b0b8d8", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
-                              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
+                              <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
                               <div style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 8 }}>{c.unit}</div>
                               <div style={{ fontSize: 12, color: c.diff >= 0 ? "#3a9060" : "#c05050", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} {c.unit} vs last wk</div>
                             </div>
@@ -821,8 +821,8 @@ export default function App() {
                         .sort((a, b) => b.weight - a.weight).slice(0, 8)
                         .flatMap((s, i) => [
                           <div key={`d${i}`} style={{ fontSize: 12, color: "#a0a8cc", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.date}</div>,
-                          <div key={`r${i}`} style={{ fontSize: 13, fontWeight: 600, color: "#2d2d4e", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.reps}</div>,
-                          <div key={`w${i}`} style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? "#4060d8" : "#2d2d4e", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.weight} lbs</div>,
+                          <div key={`r${i}`} style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.reps}</div>,
+                          <div key={`w${i}`} style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? "#4060d8" : "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.weight} lbs</div>,
                           <div key={`v${i}`} style={{ fontSize: 12, color: "#a0a8cc", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.vol}</div>
                         ])}
                     </div>
