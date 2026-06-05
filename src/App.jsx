@@ -108,7 +108,7 @@ function DrumPicker({ value, onChange, min = 1, max = 100, step = 1, label }) {
 const PLATE_SIZES = [2.5, 5, 10, 25, 35, 45];
 const PLATE_COLORS = {
   2.5: { bg: "#e8e8f0", text: "#8888a8", h: 28 }, 5: { bg: "#d0d0e0", text: "#6868a0", h: 36 },
-  10: { bg: "#a8c8f5", text: "#2050a0", h: 48 }, 25: { bg: "#90d098", text: "#1a6030", h: 60 },
+  10: { bg: "#a8c8f5", text: "#1a1a1a", h: 48 }, 25: { bg: "#90d098", text: "#1a6030", h: 60 },
   35: { bg: "#f0d060", text: "#806010", h: 68 }, 45: { bg: "#6090e0", text: "#fff", h: 76 }
 };
 const BAR_OPTIONS = [
@@ -178,7 +178,7 @@ function PlateCalculator({ onWeightChange }) {
       </div>
       <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Total Weight</span>
-        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
       </div>
     </div>
   );
@@ -219,7 +219,7 @@ function DumbbellPicker({ onWeightChange }) {
       {selected !== null && (
         <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>{combined ? `${selected} + ${selected}` : "Single DB"}</span>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
         </div>
       )}
     </div>
@@ -245,7 +245,7 @@ function WeightInput({ onWeightChange }) {
       {mode === "dumbbell"   && <DumbbellPicker  onWeightChange={onWeightChange} />}
       {mode === "bodyweight" && (
         <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#3050a0", marginBottom: 6 }}>Bodyweight</div>
+          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Bodyweight</div>
           <div style={{ fontSize: 12, color: "#7090c0" }}>Logged as 0 lbs — no added weight</div>
         </div>
       )}
@@ -258,7 +258,7 @@ function WeightInput({ onWeightChange }) {
           {manualVal && (
             <div style={{ marginTop: 14, background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Total Weight</span>
-              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#3050a0" }}>{manualVal} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{manualVal} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
             </div>
           )}
         </div>
@@ -268,6 +268,20 @@ function WeightInput({ onWeightChange }) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+const VIEWPORT_FIX = () => {
+  useEffect(() => {
+    // Ensure proper mobile viewport
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'viewport';
+      document.head.appendChild(meta);
+    }
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+  }, []);
+  return null;
+};
+
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Poppins:wght@300;400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -297,6 +311,8 @@ const STYLES = `
   .overlay{position:fixed;inset:0;background:rgba(20,25,60,.55);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
   .fade{animation:fu .3s ease}
   @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  html,body{width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+  *{-webkit-tap-highlight-color:transparent}
 `;
 
 const BG = () => (
@@ -317,10 +333,10 @@ function ProgressIndicator({ weekProgress }) {
     const lastTwo = weekProgress.slice(-2);
     const weightFlat = lastTwo[1][1].maxWeight === lastTwo[0][1].maxWeight;
     const volFlat = lastTwo[1][1].totalVol === lastTwo[0][1].totalVol;
-    if (weightTrend && volumeTrend) return { msg: "You're progressing!", sub: "Weight and volume are both going up. Keep it up.", bg: "rgba(150,230,170,.15)", border: "rgba(100,200,130,.3)", color: "#2a8040" };
-    if (!weightFlat && volumeTrend) return { msg: "Volume is increasing!", sub: "Great work. Consider adding a little more weight soon.", bg: "rgba(168,210,255,.15)", border: "rgba(120,180,255,.3)", color: "#2050a0" };
+    if (weightTrend && volumeTrend) return { msg: "You're progressing!", sub: "Weight and volume are both going up. Keep it up.", bg: "rgba(150,230,170,.15)", border: "rgba(100,200,130,.3)", color: "#1a1a1a" };
+    if (!weightFlat && volumeTrend) return { msg: "Volume is increasing!", sub: "Great work. Consider adding a little more weight soon.", bg: "rgba(168,210,255,.15)", border: "rgba(120,180,255,.3)", color: "#1a1a1a" };
     if (weightFlat && volFlat) return { msg: "Plateau detected", sub: "Weight and volume have been flat. Try adding 5 lbs or one extra rep this session.", bg: "rgba(255,210,150,.15)", border: "rgba(255,180,80,.3)", color: "#a06010" };
-    return { msg: "Keep going!", sub: "Log more sessions to see your full trend.", bg: "rgba(195,208,245,.15)", border: "rgba(160,180,240,.3)", color: "#4050a0" };
+    return { msg: "Keep going!", sub: "Log more sessions to see your full trend.", bg: "rgba(195,208,245,.15)", border: "rgba(160,180,240,.3)", color: "#1a1a1a" };
   }, [weekProgress]);
   if (!indicator) return null;
   return (
@@ -370,7 +386,7 @@ function AdminView({ onClose }) {
           <>
             <div style={{ background: "rgba(168,210,245,.1)", border: "1.5px solid rgba(168,210,245,.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 18, display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, color: "#4a7aaf", fontWeight: 600 }}>Total subscribers</span>
-              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#4060d8" }}>{emails.length}</span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#1a1a1a" }}>{emails.length}</span>
             </div>
             {emails.map((e, i) => (
               <div key={i} style={{ padding: "12px 0", borderBottom: "1px solid rgba(180,195,235,.2)", display: "flex", justifyContent: "space-between" }}>
@@ -417,7 +433,7 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28 }}>
-      <style>{STYLES}</style><BG />
+      <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Progressive Overload Tracker</p>
@@ -565,7 +581,7 @@ export default function App() {
 
   if (sessionLoading) return (
     <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <style>{STYLES}</style><BG />
+      <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
         <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>Iron Log</p>
         <p style={{ fontSize: 13, color: "#a0a8cc" }}>Loading your session...</p>
@@ -577,7 +593,7 @@ export default function App() {
 
   return (
     <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", color: "#1a1a1a", paddingBottom: 80 }}>
-      <style>{STYLES}</style><BG />
+      <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       {showAdminLogin && <AdminLoginModal onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }} onClose={() => setShowAdminLogin(false)} />}
       {showAdmin && <AdminView onClose={() => setShowAdmin(false)} />}
 
@@ -637,7 +653,7 @@ export default function App() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#3050a0" }}>{s.weight} lbs</span>}
+                          {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{s.weight} lbs</span>}
                           <button onClick={() => setSets([...sets.slice(0, i+1), { id: Date.now(), reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
                             title="Duplicate set"
                             style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: "#5080c0", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>⧉</button>
@@ -696,7 +712,7 @@ export default function App() {
                         <div style={{ fontSize: 11, color: "#b0b8d8" }}>Achieved {pr.date}</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#4870df", lineHeight: 1 }}>{pr.weight}</div>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a", lineHeight: 1 }}>{pr.weight}</div>
                         <div style={{ fontSize: 12, color: "#b0b8d8", marginTop: 3 }}>lbs × {pr.reps} reps</div>
                       </div>
                     </div>
@@ -730,12 +746,12 @@ export default function App() {
                     const prev = weekProgress[weekProgress.length - 2][1];
                     return (
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-                        {[{ label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#4060d8", glow: "rgba(160,185,255,.3)" }, { label: "Total Volume", val: last.totalVol.toLocaleString(), unit: "lbs", diff: last.totalVol - prev.totalVol, color: "#388a5a", glow: "rgba(150,220,180,.3)" }].map(c => (
+                        {[{ label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#1a1a1a", glow: "rgba(160,185,255,.3)" }, { label: "Total Volume", val: last.totalVol.toLocaleString(), unit: "lbs", diff: last.totalVol - prev.totalVol, color: "#388a5a", glow: "rgba(150,220,180,.3)" }].map(c => (
                           <div key={c.label} className="stat-box" style={{ boxShadow: `0 8px 28px ${c.glow}` }}>
                             <div style={{ fontSize: 10, fontWeight: 700, color: "#b0b8d8", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
                             <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
                             <div style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 8 }}>{c.unit}</div>
-                            <div style={{ fontSize: 12, color: c.diff >= 0 ? "#3a9060" : "#c05050", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} {c.unit} vs last wk</div>
+                            <div style={{ fontSize: 12, color: c.diff >= 0 ? "#1a1a1a" : "#c05050", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} {c.unit} vs last wk</div>
                           </div>
                         ))}
                       </div>
@@ -766,8 +782,8 @@ export default function App() {
                           {weekProgress.map(([wk, v], i) => { const barH = (v.totalVol / yMax) * chartH; const x = pad.left + gap * i + gap / 2 - barW / 2; const y = pad.top + chartH - barH; const isLatest = i === n - 1; return (
                             <g key={wk}>
                               <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#6090e0" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.75} />
-                              <text x={x + barW / 2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="9" fill={isLatest ? "#3050a0" : "#a0a8cc"} fontFamily="Poppins, sans-serif" fontWeight={isLatest ? "700" : "400"}>{getLabel(wk, i)}</text>
-                              <text x={x + barW / 2} y={y - 4} textAnchor="middle" fontSize="8" fill={isLatest ? "#3050a0" : "#8090b8"} fontFamily="Poppins, sans-serif">{v.totalVol >= 1000 ? `${(v.totalVol/1000).toFixed(1)}k` : v.totalVol}</text>
+                              <text x={x + barW / 2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="9" fill={isLatest ? "#1a1a1a" : "#a0a8cc"} fontFamily="Poppins, sans-serif" fontWeight={isLatest ? "700" : "400"}>{getLabel(wk, i)}</text>
+                              <text x={x + barW / 2} y={y - 4} textAnchor="middle" fontSize="8" fill={isLatest ? "#1a1a1a" : "#8090b8"} fontFamily="Poppins, sans-serif">{v.totalVol >= 1000 ? `${(v.totalVol/1000).toFixed(1)}k` : v.totalVol}</text>
                             </g>
                           ); })}
                         </svg>
@@ -787,7 +803,7 @@ export default function App() {
                         .flatMap((s, i) => [
                           <div key={`d${i}`} style={{ fontSize: 12, color: "#a0a8cc", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.date}</div>,
                           <div key={`r${i}`} style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.reps}</div>,
-                          <div key={`w${i}`} style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? "#4060d8" : "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.weight} lbs</div>,
+                          <div key={`w${i}`} style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? "#1a1a1a" : "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.weight} lbs</div>,
                           <div key={`v${i}`} style={{ fontSize: 12, color: "#a0a8cc", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.vol}</div>
                         ])}
                     </div>
