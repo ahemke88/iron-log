@@ -15,9 +15,15 @@ const sb = async (path, method = "GET", body = null) => {
     },
     body: body ? JSON.stringify(body) : null
   });
-  if (res.status === 204 || res.status === 200 && method !== "GET") return null;
-  if (!res.ok) { const e = await res.text(); throw new Error(e); }
-  return res.json();
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error(`Supabase error [${res.status}]:`, errText);
+    throw new Error(`${res.status}: ${errText}`);
+  }
+  if (res.status === 204) return null;
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text);
 };
 
 // ─── Exercise Categories ──────────────────────────────────────────────────────
@@ -425,9 +431,13 @@ function LoginScreen({ onLogin }) {
         const existing = await sb(`users?username=eq.${encodeURIComponent(u)}&select=id`);
         if (existing && existing.length > 0) { setError("Username taken. Try another."); setLoading(false); return; }
         const newUser = await sb("users", "POST", { username: u, email: email.trim().toLowerCase(), password_hash: simpleHash(password), joined_date: todayStr() });
+        if (!newUser || newUser.length === 0) { setError("Account created! Please sign in."); setLoading(false); return; }
         onLogin(newUser[0]);
       }
-    } catch (e) { setError("Something went wrong. Please try again."); }
+    } catch (e) {
+      console.error("Auth error:", e);
+      setError(`Error: ${e.message || "Please try again."}`);
+    }
     setLoading(false);
   };
 
