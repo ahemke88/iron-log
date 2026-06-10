@@ -1,29 +1,58 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 
 // ─── Supabase Config ──────────────────────────────────────────────────────────
+import { createClient } from '@supabase/supabase-js';
+
 const SUPABASE_URL = "https://ssiserjdpsvuqhnzykls.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaXNlcmpkcHN2dXFobnp5a2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDQ5MDEsImV4cCI6MjA5NDgyMDkwMX0.9FacnG4RLpnEqK4AFzfY7YBlxawhlJySvMpyyWDOvhI";
 
-const sb = async (path, method = "GET", body = null) => {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      "apikey": SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      "Content-Type": "application/json",
-      "Prefer": method === "POST" ? "return=representation" : "return=minimal"
-    },
-    body: body ? JSON.stringify(body) : null
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error(`Supabase error [${res.status}]:`, errText);
-    throw new Error(`${res.status}: ${errText}`);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Unified helper using official Supabase client
+const sb = {
+  async getUser(username) {
+    const { data, error } = await supabase.from("users").select("*").eq("username", username);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  async createUser(userData) {
+    const { data, error } = await supabase.from("users").insert(userData).select();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  async getWorkouts(username) {
+    const { data, error } = await supabase.from("workouts").select("*").eq("username", username).order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  async createWorkout(workoutData) {
+    const { data, error } = await supabase.from("workouts").insert(workoutData).select();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  async updateWorkout(id, sets) {
+    const { error } = await supabase.from("workouts").update({ sets }).eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+  async deleteWorkout(id) {
+    const { error } = await supabase.from("workouts").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+  async getCustomExercises(username) {
+    const { data, error } = await supabase.from("custom_exercises").select("*").eq("username", username);
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  async createCustomExercise(exData) {
+    const { data, error } = await supabase.from("custom_exercises").insert(exData).select();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  async getSubscribers() {
+    const { data, error } = await supabase.from("users").select("username,email,joined_date").order("joined_date", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data;
   }
-  if (res.status === 204) return null;
-  const text = await res.text();
-  if (!text) return null;
-  return JSON.parse(text);
 };
 
 // ─── Exercise Categories ──────────────────────────────────────────────────────
@@ -232,11 +261,39 @@ function DumbbellPicker({ onWeightChange }) {
   );
 }
 
+
+// ─── Pulley Picker ────────────────────────────────────────────────────────────
+const PULLEY_WEIGHTS = [5,10,15,20,25,30,35,40,45,50,55,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200];
+function PulleyPicker({ onWeightChange }) {
+  const [selected, setSelected] = useState(null);
+  useEffect(() => { if (selected !== null) onWeightChange(selected); }, [selected]);
+  return (
+    <div>
+      <div className="lbl">Select Cable / Pulley Weight (lbs)</div>
+      <p style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 14 }}>Tap the weight shown on the cable machine stack</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+        {PULLEY_WEIGHTS.map(w => (
+          <button key={w} onClick={() => setSelected(w)}
+            style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(180,185,220,.3)"}`, background: selected === w ? "linear-gradient(130deg,rgba(168,200,255,.3),rgba(168,240,192,.2))" : "rgba(255,255,255,.6)", color: selected === w ? "#1a1a1a" : "#6068a0", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
+            {w}
+          </button>
+        ))}
+      </div>
+      {selected !== null && (
+        <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Pulley Weight</span>
+          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{selected} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Weight Input ─────────────────────────────────────────────────────────────
 function WeightInput({ onWeightChange }) {
   const [mode, setMode] = useState("barbell");
   const [manualVal, setManualVal] = useState("");
-  const MODES = [{ key: "barbell", label: "Plate Loaded" }, { key: "dumbbell", label: "Dumbbell" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
+  const MODES = [{ key: "barbell", label: "Plate Loaded" }, { key: "dumbbell", label: "Dumbbell" }, { key: "pulley", label: "Pulley" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
   return (
     <div style={{ background: "rgba(255,255,255,.55)", borderRadius: 18, border: "1.5px solid rgba(255,255,255,.85)", padding: 18 }}>
       <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(195,208,245,.2)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
@@ -249,6 +306,7 @@ function WeightInput({ onWeightChange }) {
       </div>
       {mode === "barbell"    && <PlateCalculator onWeightChange={onWeightChange} />}
       {mode === "dumbbell"   && <DumbbellPicker  onWeightChange={onWeightChange} />}
+      {mode === "pulley" && <PulleyPicker onWeightChange={onWeightChange} />}
       {mode === "bodyweight" && (
         <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
           <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Bodyweight</div>
@@ -375,7 +433,7 @@ function AdminLoginModal({ onSuccess, onClose }) {
 function AdminView({ onClose }) {
   const [emails, setEmails] = useState(null);
   useEffect(() => {
-    sb("users?select=username,email,joined_date&order=joined_date.desc")
+    sb.getSubscribers()
       .then(data => setEmails(data || []))
       .catch(() => setEmails([]));
   }, []);
@@ -410,6 +468,64 @@ function AdminView({ onClose }) {
   );
 }
 
+
+// ─── Edit Workout Modal ───────────────────────────────────────────────────────
+function EditWorkoutModal({ workout, onSave, onDelete, onClose }) {
+  const [editSets, setEditSets] = useState(
+    (Array.isArray(workout.sets) ? workout.sets : []).map((s, i) => ({ ...s, id: i }))
+  );
+  const [saving, setSaving] = useState(false);
+
+  const updateSet = (i, field, val) => { const s = [...editSets]; s[i][field] = val; setEditSets(s); };
+
+  return (
+    <div className="overlay" style={{ alignItems: "flex-start", paddingTop: 40, overflowY: "auto" }}>
+      <div className="glass" style={{ width: "100%", maxWidth: 440, padding: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>Edit — {workout.exercise}</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
+        </div>
+        <p style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 16 }}>{workout.date}</p>
+
+        {editSets.map((s, i) => (
+          <div key={s.id} style={{ background: "rgba(255,255,255,.5)", borderRadius: 14, padding: 14, marginBottom: 12, border: "1.5px solid rgba(255,255,255,.8)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
+              {editSets.length > 1 && <button onClick={() => setEditSets(editSets.filter((_, idx) => idx !== i))} style={{ background: "rgba(255,120,120,.07)", border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", color: "#d0a0a0", fontSize: 15 }}>×</button>}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Reps</label>
+                <input type="number" value={s.reps} onChange={e => updateSet(i, "reps", Number(e.target.value))}
+                  style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 10, color: "#1a1a1a", padding: "10px 12px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, outline: "none", textAlign: "center" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Weight (lbs)</label>
+                <input type="number" value={s.weight} onChange={e => updateSet(i, "weight", Number(e.target.value))}
+                  style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 10, color: "#1a1a1a", padding: "10px 12px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, outline: "none", textAlign: "center" }} />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <button onClick={() => setEditSets([...editSets, { id: Date.now(), reps: 8, weight: 0 }])}
+          style={{ width: "100%", padding: 10, borderRadius: 12, border: "1.5px dashed rgba(168,190,240,.55)", background: "rgba(255,255,255,.5)", color: "#8098c8", fontFamily: "'Poppins',sans-serif", fontSize: 13, cursor: "pointer", marginBottom: 16 }}>
+          + Add set
+        </button>
+
+        <button onClick={() => onSave(editSets)} disabled={saving}
+          style={{ background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", border: "none", borderRadius: 14, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#1a3d2e", width: "100%", marginBottom: 10 }}>
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        <button onClick={onDelete}
+          style={{ background: "rgba(255,100,100,.08)", border: "1.5px solid rgba(255,120,120,.3)", borderRadius: 14, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#c05050", width: "100%" }}>
+          Delete Workout
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState("login");
@@ -423,15 +539,15 @@ function LoginScreen({ onLogin }) {
     const u = username.trim().toLowerCase();
     try {
       if (mode === "login") {
-        const data = await sb(`users?username=eq.${encodeURIComponent(u)}&select=*`);
+        const data = await sb.getUser(u);
         if (!data || data.length === 0) { setError("Account not found. Please sign up."); setLoading(false); return; }
         if (data[0].password_hash !== simpleHash(password)) { setError("Incorrect password."); setLoading(false); return; }
         onLogin(data[0]);
       } else {
-        const existing = await sb(`users?username=eq.${encodeURIComponent(u)}&select=id`);
+        const existing = await sb.getUser(u);
         if (existing && existing.length > 0) { setError("Username taken. Try another."); setLoading(false); return; }
-        const newUser = await sb("users", "POST", { username: u, email: email.trim().toLowerCase(), password_hash: simpleHash(password), joined_date: todayStr() });
-        if (!newUser || newUser.length === 0) { setError("Account created! Please sign in."); setLoading(false); return; }
+        const newUser = await sb.createUser({ username: u, email: email.trim().toLowerCase(), password_hash: simpleHash(password), joined_date: todayStr() });
+        if (!newUser || newUser.length === 0) { setError("Account created! Please sign in now."); setLoading(false); return; }
         onLogin(newUser[0]);
       }
     } catch (e) {
@@ -480,6 +596,7 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false); const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [savingWorkout, setSavingWorkout] = useState(false);
+  const [editingWorkout, setEditingWorkout] = useState(null);
   const adminTaps = useRef(0); const adminTimer = useRef(null);
 
   const categories = useMemo(() => buildCategories(customExercises), [customExercises]);
@@ -502,8 +619,8 @@ export default function App() {
   const loadUserData = async (userData) => {
     try {
       const [workoutData, customData] = await Promise.all([
-        sb(`workouts?username=eq.${encodeURIComponent(userData.username)}&order=created_at.desc&select=*`),
-        sb(`custom_exercises?username=eq.${encodeURIComponent(userData.username)}&select=*`)
+        sb.getWorkouts(userData.username),
+        sb.getCustomExercises(userData.username)
       ]);
       setWorkouts(workoutData || []);
       setCustomExercises(customData || []);
@@ -526,11 +643,11 @@ export default function App() {
       if (customEx.trim()) {
         const exists = customExercises.find(e => e.name.toLowerCase() === customEx.trim().toLowerCase());
         if (!exists) {
-          const newCustom = await sb("custom_exercises", "POST", { username: user.username, name: customEx.trim(), category: customExCategory });
+          const newCustom = await sb.createCustomExercise({ username: user.username, name: customEx.trim(), category: customExCategory });
           if (newCustom) setCustomExercises(prev => [...prev, newCustom[0]]);
         }
       }
-      const newW = await sb("workouts", "POST", { username: user.username, date, exercise: name, sets: validSets.map(s => ({ reps: Number(s.reps), weight: Number(s.weight) })) });
+      const newW = await sb.createWorkout({ username: user.username, date, exercise: name, sets: validSets.map(s => ({ reps: Number(s.reps), weight: Number(s.weight) })) });
       if (newW) setWorkouts(prev => [newW[0], ...prev]);
       setSets([{ id: Date.now(), reps: "8", weight: 0 }]);
       setCustomEx(""); setSaved(true); setTimeout(() => setSaved(false), 2200);
@@ -606,6 +723,27 @@ export default function App() {
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       {showAdminLogin && <AdminLoginModal onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }} onClose={() => setShowAdminLogin(false)} />}
       {showAdmin && <AdminView onClose={() => setShowAdmin(false)} />}
+      {editingWorkout && (
+        <EditWorkoutModal
+          workout={editingWorkout}
+          onSave={async (newSets) => {
+            try {
+              await sb.updateWorkout(editingWorkout.id, newSets);
+              setWorkouts(prev => prev.map(w => w.id === editingWorkout.id ? { ...w, sets: newSets } : w));
+              setEditingWorkout(null);
+            } catch (e) { alert("Error saving. Please try again."); }
+          }}
+          onDelete={async () => {
+            if (!window.confirm("Delete this workout?")) return;
+            try {
+              await sb.deleteWorkout(editingWorkout.id);
+              setWorkouts(prev => prev.filter(w => w.id !== editingWorkout.id));
+              setEditingWorkout(null);
+            } catch (e) { alert("Error deleting. Please try again."); }
+          }}
+          onClose={() => setEditingWorkout(null)}
+        />
+      )}
 
       <div style={{ position: "relative", zIndex: 1 }}>
         <div style={{ padding: "36px 24px 20px" }}>
@@ -664,9 +802,6 @@ export default function App() {
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{s.weight} lbs</span>}
-                          <button onClick={() => setSets([...sets.slice(0, i+1), { id: Date.now(), reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
-                            title="Duplicate set"
-                            style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: "#5080c0", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>⧉</button>
                           {sets.length > 1 && <button className="rm-btn" onClick={() => setSets(sets.filter((_, idx) => idx !== i))}>×</button>}
                         </div>
                       </div>
@@ -680,6 +815,10 @@ export default function App() {
                       </div>
                       <label className="lbl">Weight</label>
                       <WeightInput onWeightChange={v => updateSetWeight(i, v)} />
+                      <button onClick={() => setSets([...sets.slice(0, i+1), { id: Date.now(), reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
+                        style={{ marginTop: 12, width: "100%", padding: "10px", borderRadius: 12, border: "1.5px solid rgba(168,200,245,.4)", background: "rgba(168,200,245,.1)", color: "#3060b0", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        ⧉ Duplicate this set
+                      </button>
                     </div>
                   ))}
                   <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight }])}>+ Add set</button>
@@ -692,9 +831,15 @@ export default function App() {
                   <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#1a1a1a", marginBottom: 14 }}>Recent sessions</p>
                   {workouts.slice(0, 4).map(w => (
                     <div key={w.id} className="recent-card">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>{w.exercise}</span>
-                        <span style={{ fontSize: 11, color: "#b0b8d8" }}>{w.date}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <div>
+                          <span style={{ fontSize: 14, fontWeight: 600 }}>{w.exercise}</span>
+                          <div style={{ fontSize: 11, color: "#b0b8d8", marginTop: 2 }}>{w.date}</div>
+                        </div>
+                        <button onClick={() => setEditingWorkout(w)}
+                          style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 10, padding: "6px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, color: "#3060b0", cursor: "pointer", flexShrink: 0 }}>
+                          Edit
+                        </button>
                       </div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         {(Array.isArray(w.sets) ? w.sets : []).map((s, i) => <span key={i} className="spill">{s.reps} × {s.weight} lbs</span>)}
