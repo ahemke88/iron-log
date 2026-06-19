@@ -469,6 +469,74 @@ function AdminView({ onClose }) {
 }
 
 
+
+// ─── Account Settings Modal ───────────────────────────────────────────────────
+function AccountSettingsModal({ user, onUpdate, onClose }) {
+  const [newUsername, setNewUsername] = useState(user.username);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+
+  const saveChanges = async () => {
+    setMsg(""); setError("");
+    if (newPassword && newPassword !== confirmPassword) { setError("Passwords do not match."); return; }
+    setSaving(true);
+    try {
+      const updates = {};
+      if (newUsername.trim() && newUsername.trim() !== user.username) {
+        const existing = await sb.getUser(newUsername.trim().toLowerCase());
+        if (existing && existing.length > 0) { setError("Username already taken."); setSaving(false); return; }
+        updates.username = newUsername.trim().toLowerCase();
+      }
+      if (newPassword) updates.password_hash = simpleHash(newPassword);
+      if (Object.keys(updates).length === 0) { setError("No changes made."); setSaving(false); return; }
+      const { error: err } = await supabase.from("users").update(updates).eq("id", user.id);
+      if (err) throw new Error(err.message);
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem("iron_log_user", JSON.stringify(updatedUser));
+      onUpdate(updatedUser);
+      setMsg("Changes saved successfully!");
+      setNewPassword(""); setConfirmPassword("");
+    } catch (e) { setError(e.message || "Error saving changes."); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="overlay">
+      <div className="glass" style={{ width: "100%", maxWidth: 400, padding: 28 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Account Settings</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label className="lbl">Username</label>
+          <input value={newUsername} onChange={e => setNewUsername(e.target.value)} className="field" placeholder="New username" />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label className="lbl">New Password</label>
+          <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="field" placeholder="Leave blank to keep current" />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label className="lbl">Confirm New Password</label>
+          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="field" placeholder="Re-enter new password" />
+        </div>
+
+        {error && <div className="err-box" style={{ marginBottom: 14 }}>{error}</div>}
+        {msg && <div style={{ background: "rgba(100,200,130,.12)", border: "1.5px solid rgba(100,200,130,.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#2a7040" }}>{msg}</div>}
+
+        <button onClick={saveChanges} disabled={saving} className="save-btn">
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Edit Workout Modal ───────────────────────────────────────────────────────
 function EditWorkoutModal({ workout, onSave, onDelete, onClose }) {
   const [editSets, setEditSets] = useState(
@@ -590,13 +658,14 @@ export default function App() {
   const [tab, setTab] = useState("log");
   const [selectedExercise, setSelectedExercise] = useState("Bench Press");
   const [customEx, setCustomEx] = useState(""); const [customExCategory, setCustomExCategory] = useState("Chest");
-  const [sets, setSets] = useState([{ id: Date.now(), reps: "8", weight: 0 }]);
+  const [sets, setSets] = useState([{ id: Date.now(), reps: "8", weight: 0, times: 1 }]);
   const [date, setDate] = useState(todayStr()); const [saved, setSaved] = useState(false);
   const [activeExercise, setActiveExercise] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false); const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
   const adminTaps = useRef(0); const adminTimer = useRef(null);
 
   const categories = useMemo(() => buildCategories(customExercises), [customExercises]);
@@ -647,9 +716,13 @@ export default function App() {
           if (newCustom) setCustomExercises(prev => [...prev, newCustom[0]]);
         }
       }
-      const newW = await sb.createWorkout({ username: user.username, date, exercise: name, sets: validSets.map(s => ({ reps: Number(s.reps), weight: Number(s.weight) })) });
+      // Expand sets by times multiplier
+      const expandedSets = validSets.flatMap(s =>
+        Array.from({ length: s.times || 1 }, () => ({ reps: Number(s.reps), weight: Number(s.weight) }))
+      );
+      const newW = await sb.createWorkout({ username: user.username, date, exercise: name, sets: expandedSets });
       if (newW) setWorkouts(prev => [newW[0], ...prev]);
-      setSets([{ id: Date.now(), reps: "8", weight: 0 }]);
+      setSets([{ id: Date.now(), reps: "8", weight: 0, times: 1 }]);
       setCustomEx(""); setSaved(true); setTimeout(() => setSaved(false), 2200);
     } catch (e) { alert("Error saving workout. Please try again."); }
     setSavingWorkout(false);
@@ -706,6 +779,20 @@ export default function App() {
 
   const maxVol = useMemo(() => Math.max(...weekProgress.map(([, v]) => v.totalVol), 1), [weekProgress]);
 
+  // Daily progress — one entry per day logged, showing max weight
+  const dailyProgress = useMemo(() => {
+    if (!activeExercise) return [];
+    const byDay = {};
+    workouts.filter(w => w.exercise === activeExercise).forEach(w => {
+      const setsArr = Array.isArray(w.sets) ? w.sets : [];
+      if (!byDay[w.date]) byDay[w.date] = { maxWeight: 0 };
+      setsArr.forEach(s => { byDay[w.date].maxWeight = Math.max(byDay[w.date].maxWeight, s.weight); });
+    });
+    return Object.entries(byDay).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [workouts, activeExercise]);
+
+  const maxDailyWeight = useMemo(() => Math.max(...dailyProgress.map(([, v]) => v.maxWeight), 1), [dailyProgress]);
+
   if (sessionLoading) return (
     <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
@@ -723,6 +810,13 @@ export default function App() {
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       {showAdminLogin && <AdminLoginModal onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }} onClose={() => setShowAdminLogin(false)} />}
       {showAdmin && <AdminView onClose={() => setShowAdmin(false)} />}
+      {showSettings && (
+        <AccountSettingsModal
+          user={user}
+          onUpdate={(updatedUser) => { setUser(updatedUser); setShowSettings(false); }}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
       {editingWorkout && (
         <EditWorkoutModal
           workout={editingWorkout}
@@ -751,6 +845,7 @@ export default function App() {
             <span onClick={handleLogoTap} style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", cursor: "default" }}>Iron Log</span>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => window.location.reload()} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 14, color: "#a0a8cc", cursor: "pointer" }}>↺</button>
+              <button onClick={() => setShowSettings(true)} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#a0a8cc", cursor: "pointer" }}>⚙</button>
               <button onClick={handleLogout} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
             </div>
           </div>
@@ -799,7 +894,11 @@ export default function App() {
                   {sets.map((s, i) => (
                     <div key={s.id} style={{ marginBottom: 24, background: "rgba(255,255,255,.4)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.8)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
+                          {s.type === "drop" && <span style={{ fontSize: 10, fontWeight: 700, color: "#c05050", background: "rgba(240,150,150,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>DROP</span>}
+                          {s.type === "super" && <span style={{ fontSize: 10, fontWeight: 700, color: "#3060b0", background: "rgba(100,180,255,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>SUPER</span>}
+                        </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{s.weight} lbs</span>}
                           {sets.length > 1 && <button className="rm-btn" onClick={() => setSets(sets.filter((_, idx) => idx !== i))}>×</button>}
@@ -815,13 +914,34 @@ export default function App() {
                       </div>
                       <label className="lbl">Weight</label>
                       <WeightInput onWeightChange={v => updateSetWeight(i, v)} />
-                      <button onClick={() => setSets([...sets.slice(0, i+1), { id: Date.now(), reps: s.reps, weight: s.weight }, ...sets.slice(i+1)])}
-                        style={{ marginTop: 12, width: "100%", padding: "10px", borderRadius: 12, border: "1.5px solid rgba(168,200,245,.4)", background: "rgba(168,200,245,.1)", color: "#3060b0", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                        ⧉ Duplicate this set
-                      </button>
+                      <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(168,200,245,.08)", borderRadius: 12, padding: "10px 14px", border: "1.5px solid rgba(168,200,245,.25)" }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#5070b0" }}>× Times (same reps & weight)</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <button onClick={() => { const s2 = [...sets]; s2[i].times = Math.max(1, (s2[i].times||1) - 1); setSets(s2); }}
+                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(168,200,245,.4)", background: "rgba(255,255,255,.7)", color: "#3060b0", fontSize: 18, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, color: "#1a1a1a", minWidth: 28, textAlign: "center" }}>{s.times || 1}</span>
+                          <button onClick={() => { const s2 = [...sets]; s2[i].times = (s2[i].times||1) + 1; setSets(s2); }}
+                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(168,200,245,.4)", background: "rgba(255,255,255,.7)", color: "#3060b0", fontSize: 18, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                        </div>
+                        {(s.times||1) > 1 && <span style={{ fontSize: 11, color: "#7090c0" }}>= {s.times} sets</span>}
+                      </div>
                     </div>
                   ))}
-                  <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight }])}>+ Add set</button>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 4 }}>
+                    <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight, times: 1 }])}>+ Add Set</button>
+                    <button className="add-set-btn" onClick={() => {
+                      const last = sets[sets.length-1];
+                      const dropWeight = Math.max(0, Number(last.weight) - 10);
+                      const dropReps = Math.min(100, Number(last.reps) + 2);
+                      setSets([...sets, { id: Date.now(), reps: String(dropReps), weight: dropWeight, times: 1, type: "drop" }]);
+                    }} style={{ borderColor: "rgba(240,150,150,.5)", color: "#c05050" }}>↓ Drop Set</button>
+                    <button className="add-set-btn" onClick={() => {
+                      const last = sets[sets.length-1];
+                      const superWeight = Number(last.weight) + 10;
+                      const superReps = Math.max(1, Number(last.reps) - 2);
+                      setSets([...sets, { id: Date.now(), reps: String(superReps), weight: superWeight, times: 1, type: "super" }]);
+                    }} style={{ borderColor: "rgba(100,180,255,.5)", color: "#3060b0" }}>↑ Super Set</button>
+                  </div>
                 </div>
                 <button className="save-btn" onClick={saveWorkout} disabled={savingWorkout}>{savingWorkout ? "Saving..." : saved ? "✓ Saved!" : "Save Workout"}</button>
               </div>
@@ -914,33 +1034,56 @@ export default function App() {
                   })()}
 
                   <div className="glass" style={{ padding: 20, marginBottom: 18 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 18 }}>Weekly Volume</p>
-                    {(() => {
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 4 }}>Max Weight Per Session (lbs)</p>
+                    <p style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 18 }}>Each bar = one day you logged this exercise</p>
+                    {dailyProgress.length === 0 && <p style={{ color: "#b0b8d8", fontSize: 13 }}>No data yet.</p>}
+                    {dailyProgress.length > 0 && (() => {
                       const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0","#f0b8a8","#a8f0d0"];
                       const svgW = 320, svgH = 200;
-                      const pad = { top: 16, right: 16, bottom: 48, left: 52 };
-                      const chartW = svgW - pad.left - pad.right; const chartH = svgH - pad.top - pad.bottom;
-                      const n = weekProgress.length; const barW = Math.min(40, (chartW / n) * 0.55);
-                      const gap = chartW / n; const yMax = maxVol * 1.15; const yTicks = 4;
-                      const getLabel = (wk, i) => { if (i === n - 1) return "Now"; if (i === n - 2) return "Last"; const d = new Date(wk); return `${d.getMonth()+1}/${d.getDate()}`; };
+                      const pad = { top: 20, right: 16, bottom: 48, left: 52 };
+                      const chartW = svgW - pad.left - pad.right;
+                      const chartH = svgH - pad.top - pad.bottom;
+                      const n = dailyProgress.length;
+                      const barW = Math.min(36, (chartW / Math.max(n,1)) * 0.6);
+                      const gap = chartW / Math.max(n,1);
+                      const yMax = maxDailyWeight * 1.2;
+                      const yTicks = 4;
                       return (
                         <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
-                          {Array.from({ length: yTicks + 1 }, (_, ti) => { const val = Math.round((yMax / yTicks) * ti); const y = pad.top + chartH - (val / yMax) * chartH; return (
-                            <g key={ti}>
-                              <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(160,180,230,.2)" strokeWidth="1" strokeDasharray="4,3" />
-                              <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#a0a8cc" fontFamily="Poppins, sans-serif">{val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}</text>
-                            </g>
-                          ); })}
+                          {Array.from({ length: yTicks + 1 }, (_, ti) => {
+                            const val = Math.round((yMax / yTicks) * ti);
+                            const y = pad.top + chartH - (val / yMax) * chartH;
+                            return (
+                              <g key={ti}>
+                                <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(160,180,230,.2)" strokeWidth="1" strokeDasharray="4,3" />
+                                <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#a0a8cc" fontFamily="Poppins,sans-serif">{val}</text>
+                              </g>
+                            );
+                          })}
                           <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(160,180,230,.4)" strokeWidth="1.5" />
                           <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(160,180,230,.4)" strokeWidth="1.5" />
-                          <text x={12} y={pad.top + chartH / 2} textAnchor="middle" fontSize="9" fill="#a0a8cc" fontFamily="Poppins, sans-serif" transform={`rotate(-90, 12, ${pad.top + chartH / 2})`}>Volume (lbs)</text>
-                          {weekProgress.map(([wk, v], i) => { const barH = (v.totalVol / yMax) * chartH; const x = pad.left + gap * i + gap / 2 - barW / 2; const y = pad.top + chartH - barH; const isLatest = i === n - 1; return (
-                            <g key={wk}>
-                              <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#6090e0" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.75} />
-                              <text x={x + barW / 2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="9" fill={isLatest ? "#1a1a1a" : "#a0a8cc"} fontFamily="Poppins, sans-serif" fontWeight={isLatest ? "700" : "400"}>{getLabel(wk, i)}</text>
-                              <text x={x + barW / 2} y={y - 4} textAnchor="middle" fontSize="8" fill={isLatest ? "#1a1a1a" : "#8090b8"} fontFamily="Poppins, sans-serif">{v.totalVol >= 1000 ? `${(v.totalVol/1000).toFixed(1)}k` : v.totalVol}</text>
-                            </g>
-                          ); })}
+                          <text x={10} y={pad.top + chartH/2} textAnchor="middle" fontSize="8" fill="#a0a8cc" fontFamily="Poppins,sans-serif" transform={`rotate(-90,10,${pad.top + chartH/2})`}>lbs</text>
+                          {dailyProgress.map(([day, v], i) => {
+                            const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
+                            const x = pad.left + gap * i + gap/2 - barW/2;
+                            const y = pad.top + chartH - barH;
+                            const isLatest = i === n - 1;
+                            const d = new Date(day + "T12:00:00");
+                            const label = `${d.getMonth()+1}/${d.getDate()}`;
+                            return (
+                              <g key={day}>
+                                <rect x={x} y={y} width={barW} height={barH} rx="4"
+                                  fill={isLatest ? "#6090e0" : BAR_COLORS[i % BAR_COLORS.length]}
+                                  opacity={isLatest ? 1 : 0.75} />
+                                <text x={x + barW/2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="8"
+                                  fill={isLatest ? "#1a1a1a" : "#a0a8cc"} fontFamily="Poppins,sans-serif"
+                                  fontWeight={isLatest ? "700" : "400"}>{label}</text>
+                                <text x={x + barW/2} y={y - 5} textAnchor="middle" fontSize="8"
+                                  fill={isLatest ? "#1a1a1a" : "#8090b8"} fontFamily="Poppins,sans-serif"
+                                  fontWeight={isLatest ? "700" : "400"}>{v.maxWeight}</text>
+                              </g>
+                            );
+                          })}
                         </svg>
                       );
                     })()}
