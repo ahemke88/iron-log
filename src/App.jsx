@@ -927,21 +927,7 @@ export default function App() {
                       </div>
                     </div>
                   ))}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 4 }}>
-                    <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight, times: 1 }])}>+ Add Set</button>
-                    <button className="add-set-btn" onClick={() => {
-                      const last = sets[sets.length-1];
-                      const dropWeight = Math.max(0, Number(last.weight) - 10);
-                      const dropReps = Math.min(100, Number(last.reps) + 2);
-                      setSets([...sets, { id: Date.now(), reps: String(dropReps), weight: dropWeight, times: 1, type: "drop" }]);
-                    }} style={{ borderColor: "rgba(240,150,150,.5)", color: "#c05050" }}>↓ Drop Set</button>
-                    <button className="add-set-btn" onClick={() => {
-                      const last = sets[sets.length-1];
-                      const superWeight = Number(last.weight) + 10;
-                      const superReps = Math.max(1, Number(last.reps) - 2);
-                      setSets([...sets, { id: Date.now(), reps: String(superReps), weight: superWeight, times: 1, type: "super" }]);
-                    }} style={{ borderColor: "rgba(100,180,255,.5)", color: "#3060b0" }}>↑ Super Set</button>
-                  </div>
+                  <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight, times: 1 }])}>+ Add Set</button>
                 </div>
                 <button className="save-btn" onClick={saveWorkout} disabled={savingWorkout}>{savingWorkout ? "Saving..." : saved ? "✓ Saved!" : "Save Workout"}</button>
               </div>
