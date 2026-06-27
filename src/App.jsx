@@ -781,12 +781,10 @@ ${context}`;
         ? [{ role: "user", content: "Analyze my training data and give me your honest assessment. What should I focus on?" }]
         : newMessages.map(m => ({ role: m.role, content: m.content }));
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
           system: systemPrompt,
           messages: apiMessages
         })
