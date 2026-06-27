@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iron Log — Progressive Overload Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(140deg, #deeeff 0%, #eaf6ff 25%, #edfff0 55%, #f5fff2 100%);
+      min-height: 100vh;
+      color: #1a1a1a;
+    }
+
+    .blob1 { position: fixed; top: -80px; right: -60px; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(190,240,195,.55) 0%, transparent 68%); pointer-events: none; }
+    .blob2 { position: fixed; bottom: 80px; left: -80px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(190,215,255,.5) 0%, transparent 68%); pointer-events: none; }
+    .blob3 { position: fixed; bottom: 200px; right: 20px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(255,215,240,.38) 0%, transparent 68%); pointer-events: none; }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 60px 28px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.6);
+      border: 1.5px solid rgba(180,185,220,.3);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #a0a8cc;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: #5080df;
+    }
+
+    .tagline {
+      font-size: 16px;
+      color: #6070a0;
+      line-height: 1.7;
+      margin-bottom: 48px;
+      font-weight: 400;
+    }
+
+    .glass {
+      background: rgba(255,255,255,.58);
+      backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(255,255,255,.85);
+      border-radius: 24px;
+      padding: 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(160,185,230,.12);
+    }
+
+    .qr-section {
+      text-align: center;
+    }
+
+    .qr-section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+
+    .qr-section p {
+      font-size: 14px;
+      color: #a0a8cc;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .qr-wrapper {
+      display: inline-block;
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 28px rgba(160,185,230,.2);
+      margin-bottom: 24px;
+    }
+
+    .qr-wrapper img {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+
+    .url-box {
+      background: rgba(168,200,245,.1);
+      border: 1.5px solid rgba(168,200,245,.3);
+      border-radius: 14px;
+      padding: 12px 20px;
+      font-size: 14px;
+      color: #3060b0;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+
+    .install-btn {
+      display: inline-block;
+      background: linear-gradient(130deg, #b8dcff 0%, #b8f0cc 100%);
+      border: none;
+      border-radius: 14px;
+      padding: 14px 32px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a3d2e;
+      text-decoration: none;
+      box-shadow: 0 6px 22px rgba(160,210,245,.38);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .install-btn:hover { transform: translateY(-2px); }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,.6);
+      border: 1.5px solid rgba(255,255,255,.85);
+      border-radius: 16px;
+      padding: 18px 16px;
+    }
+
+    .feature-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 6px;
+    }
+
+    .feature-desc {
+      font-size: 12px;
+      color: #7888a0;
+      line-height: 1.6;
+    }
+
+    .steps {
+      counter-reset: step;
+    }
+
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(130deg, #b8dcff, #b8f0cc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a3d2e;
+      flex-shrink: 0;
+    }
+
+    .step-text {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.7;
+      padding-top: 4px;
+    }
+
+    .step-text strong {
+      color: #1a1a1a;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #b0b8d8;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="blob1"></div>
+  <div class="blob2"></div>
+  <div class="blob3"></div>
+
+  <div class="container">
+    <div class="badge">Free to download</div>
+    <h1>Iron Log.<br /><em>Train smarter.</em></h1>
+    <p class="tagline">The progressive overload tracker that coaches you based on your own data. Log your sets, track your progress, and always push for one more.</p>
+
+    <!-- QR Code Section -->
+    <div class="glass qr-section">
+      <h2>Download the app</h2>
+      <p>Scan the QR code with your phone camera or tap the link below to open it in your browser. Then add it to your home screen.</p>
+
+      <div class="qr-wrapper">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1a1a1a&bgcolor=ffffff&data=https://iron-log-chi-ruby.vercel.app&qzone=1" alt="Iron Log QR Code" />
+      </div>
+
+      <div class="url-box">iron-log-chi-ruby.vercel.app</div>
+
+      <a href="https://iron-log-chi-ruby.vercel.app" class="install-btn">Open Iron Log</a>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-title">Plate Calculator</div>
+        <div class="feature-desc">Barbell, dumbbell, pulley, and bodyweight. No math needed.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">AI Coach</div>
+        <div class="feature-desc">Personalized advice based on your actual workout history.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Progress Charts</div>
+        <div class="feature-desc">See your strength go up over time, exercise by exercise.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Personal Records</div>
+        <div class="feature-desc">Your heaviest lifts tracked automatically, grouped by muscle.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Cloud Sync</div>
+        <div class="feature-desc">Your data saved securely. Never lose your progress again.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Works Offline</div>
+        <div class="feature-desc">Installed on your home screen like a real app. No app store needed.</div>
+      </div>
+    </div>
+
+    <!-- How to Install -->
+    <div class="glass">
+      <p style="font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px;">How to install on your phone</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">Open <strong>Safari</strong> on iPhone or <strong>Chrome</strong> on Android and go to the link above.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">Tap the <strong>Share button</strong> at the bottom of the screen.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">Tap <strong>Add to Home Screen</strong> then tap <strong>Add</strong>.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-text">Iron Log will appear on your home screen like any other app. Open it and create your free account.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Iron Log. Built to push you forward.
+    </div>
+  </div>
+</body>
+</html>

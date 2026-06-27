@@ -375,6 +375,7 @@ const STYLES = `
   .overlay{position:fixed;inset:0;background:rgba(20,25,60,.55);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
   .fade{animation:fu .3s ease}
   @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
   html,body{width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
   *{-webkit-tap-highlight-color:transparent}
 `;
@@ -650,6 +651,257 @@ function LoginScreen({ onLogin }) {
   );
 }
 
+
+// ─── About Tab ────────────────────────────────────────────────────────────────
+function AboutTab() {
+  return (
+    <div className="fade">
+      <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>What is Iron Log</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>Iron Log is a workout tracker built around one idea: you should always be doing a little more than last time. More weight. More reps. More effort. That is how your body grows.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>Every time you open this app, your job is simple. Beat what you did before. Even by one rep. Even by five pounds. That is enough.</p>
+      </div>
+
+      <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>What is Progressive Overload</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>Progressive overload means gradually increasing the demand you place on your muscles over time. Your body adapts to stress. Once it adapts, you need to add more stress to keep growing.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>This does not mean going heavier every single session. It means making small, consistent improvements over weeks and months. That could be one extra rep, a slightly heavier weight, or less rest between sets.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>The people who make the most progress are not the ones who train the hardest one time. They are the ones who train consistently and improve a little bit every week.</p>
+      </div>
+
+      <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>What is a 1RM</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>1RM stands for one rep max. It is the maximum amount of weight you can lift for a single rep of any given exercise. It is the benchmark that defines your current strength level.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>You do not need to test your 1RM to use this app. But understanding it helps you set smarter goals. Most people train between 60 and 85 percent of their 1RM depending on whether they are building size, strength, or endurance.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>As your 1RM goes up over time, your strength is going up. That is the whole point.</p>
+      </div>
+
+      <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>The Philosophy</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>One more rep. One more plate. That is it.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>Not every session will feel good. Some days the weight feels heavy and the motivation is not there. That is normal. Show up anyway. Do the work. Log it. Come back next time and try to do a little more.</p>
+        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>The log does not lie. If you keep showing up and keep pushing, the numbers will go up. And when the numbers go up, so does everything else.</p>
+      </div>
+
+      <div style={{ textAlign: "center", padding: "8px 0 24px" }}>
+        <p style={{ fontSize: 12, color: "#b0b8d8" }}>Iron Log. Built to push you forward.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Coach Tab ────────────────────────────────────────────────────────────────
+function CoachTab({ workouts, categories, user }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Build workout summary for AI context
+  const buildContext = () => {
+    if (!workouts || workouts.length === 0) return "The user has not logged any workouts yet.";
+
+    // Muscle group frequency
+    const groupCount = {};
+    const exerciseLastWeight = {};
+    const exerciseWeightByDate = {};
+
+    workouts.forEach(w => {
+      const setsArr = Array.isArray(w.sets) ? w.sets : [];
+      // Find category
+      let foundCat = "Other";
+      for (const [cat, exs] of Object.entries(categories)) {
+        if (exs.includes(w.exercise)) { foundCat = cat; break; }
+      }
+      groupCount[foundCat] = (groupCount[foundCat] || 0) + 1;
+
+      // Track weight over time per exercise
+      const maxW = setsArr.length > 0 ? Math.max(...setsArr.map(s => s.weight)) : 0;
+      if (!exerciseWeightByDate[w.exercise]) exerciseWeightByDate[w.exercise] = [];
+      exerciseWeightByDate[w.exercise].push({ date: w.date, maxWeight: maxW });
+      exerciseLastWeight[w.exercise] = maxW;
+    });
+
+    // Find plateaus (no weight increase in last 2 entries)
+    const plateaus = [];
+    Object.entries(exerciseWeightByDate).forEach(([ex, entries]) => {
+      const sorted = entries.sort((a, b) => a.date.localeCompare(b.date));
+      if (sorted.length >= 2) {
+        const last = sorted[sorted.length - 1];
+        const prev = sorted[sorted.length - 2];
+        if (last.maxWeight <= prev.maxWeight) plateaus.push({ exercise: ex, weight: last.maxWeight });
+      }
+    });
+
+    // Find least trained muscle groups
+    const allGroups = Object.keys(categories);
+    const leastTrained = allGroups.filter(g => !groupCount[g] || groupCount[g] < 2);
+
+    const totalSessions = workouts.length;
+    const recentWorkouts = workouts.slice(0, 5).map(w => `${w.exercise} on ${w.date}`).join(", ");
+
+    return `User: ${user.username}
+Total sessions logged: ${totalSessions}
+Recent workouts: ${recentWorkouts}
+Sessions per muscle group: ${Object.entries(groupCount).map(([g, c]) => `${g}: ${c}`).join(", ")}
+Undertrained groups (less than 2 sessions): ${leastTrained.join(", ") || "none"}
+Exercises with no recent weight increase: ${plateaus.map(p => `${p.exercise} (stuck at ${p.weight} lbs)`).join(", ") || "none detected"}`;
+  };
+
+  const sendMessage = async (userMessage, isInitial = false) => {
+    const context = buildContext();
+    const newMessages = isInitial
+      ? []
+      : [...messages, { role: "user", content: userMessage }];
+
+    if (!isInitial) {
+      setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    }
+    setInput("");
+    setLoading(true);
+
+    try {
+      const systemPrompt = `You are Iron Log's AI coach. You are a knowledgeable, encouraging, and direct fitness coach. You speak in plain simple English. No jargon. No em dashes. Short paragraphs. You have access to the user's workout data below.
+
+Your job:
+1. Analyze their training and give specific actionable advice
+2. Identify muscle imbalances and suggest corrections
+3. Challenge them when you see no progress
+4. Ask questions to understand what is holding them back
+5. Motivate them genuinely based on their actual data, not generic quotes
+6. Reference their specific exercises and numbers when giving advice
+
+Always be direct and specific. Never give vague advice. If they are stuck on a weight, tell them exactly what to do.
+
+User workout data:
+${context}`;
+
+      const apiMessages = isInitial
+        ? [{ role: "user", content: "Analyze my training data and give me your honest assessment. What should I focus on?" }]
+        : newMessages.map(m => ({ role: m.role, content: m.content }));
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: apiMessages
+        })
+      });
+
+      const data = await response.json();
+      const reply = data.content?.[0]?.text || "I could not generate a response. Please try again.";
+
+      if (isInitial) {
+        setMessages([{ role: "assistant", content: reply }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      }
+    } catch (e) {
+      const errMsg = "Could not connect to the coach right now. Please try again.";
+      if (isInitial) {
+        setMessages([{ role: "assistant", content: errMsg }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: errMsg }]);
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!initialized) {
+      setInitialized(true);
+      sendMessage("", true);
+    }
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  return (
+    <div className="fade" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 220px)", minHeight: 400 }}>
+      {/* Header */}
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>AI Coach</p>
+        <p style={{ fontSize: 13, color: "#a0a8cc" }}>Powered by your workout data. Ask anything.</p>
+      </div>
+
+      {/* Chat messages */}
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 16 }}>
+        {messages.length === 0 && !loading && (
+          <div className="glass" style={{ padding: 24, textAlign: "center" }}>
+            <p style={{ color: "#b0b8d8", fontSize: 14 }}>Loading your coaching session...</p>
+          </div>
+        )}
+
+        {loading && messages.length === 0 && (
+          <div className="glass" style={{ padding: 24 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#a0a8cc", animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+              ))}
+              <span style={{ fontSize: 13, color: "#a0a8cc", marginLeft: 8 }}>Analyzing your training data...</span>
+            </div>
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} style={{ marginBottom: 14, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+            {m.role === "assistant" && (
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", display: "flex", alignItems: "center", justifyContent: "center", marginRight: 10, flexShrink: 0, fontSize: 14, fontWeight: 700, color: "#1a3d2e" }}>C</div>
+            )}
+            <div style={{
+              maxWidth: "82%",
+              background: m.role === "user" ? "linear-gradient(130deg,#b8dcff,#b8f0cc)" : "rgba(255,255,255,.75)",
+              borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+              padding: "12px 16px",
+              border: "1.5px solid rgba(255,255,255,.85)",
+              backdropFilter: "blur(12px)"
+            }}>
+              <p style={{ fontSize: 14, color: "#1a1a1a", lineHeight: 1.75, whiteSpace: "pre-wrap", fontFamily: "'Poppins',sans-serif" }}>{m.content}</p>
+            </div>
+          </div>
+        ))}
+
+        {loading && messages.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#1a3d2e", flexShrink: 0 }}>C</div>
+            <div style={{ background: "rgba(255,255,255,.75)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", border: "1.5px solid rgba(255,255,255,.85)" }}>
+              <div style={{ display: "flex", gap: 5 }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#a0a8cc", animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Input */}
+      <div style={{ display: "flex", gap: 10, paddingTop: 12, borderTop: "1.5px solid rgba(180,195,235,.2)" }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && input.trim() && !loading) { e.preventDefault(); sendMessage(input.trim()); } }}
+          placeholder="Ask your coach anything..."
+          style={{ flex: 1, background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 24, color: "#1a1a1a", padding: "12px 18px", fontFamily: "'Poppins',sans-serif", fontSize: 14, outline: "none" }}
+        />
+        <button
+          onClick={() => { if (input.trim() && !loading) sendMessage(input.trim()); }}
+          disabled={loading || !input.trim()}
+          style={{ background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", border: "none", borderRadius: "50%", width: 46, height: 46, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: loading || !input.trim() ? 0.5 : 1 }}>
+          ↑
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
@@ -850,9 +1102,9 @@ export default function App() {
             </div>
           </div>
           <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#5080df", fontStyle: "italic" }}>{user.username}</em></h1>
-          <div style={{ background: "rgba(195,208,245,.2)", borderRadius: 40, padding: 5, display: "inline-flex", gap: 2 }}>
-            {[["log","Log"],["prs","PRs"],["progress","Progress"]].map(([k,l]) => (
-              <button key={k} className={`tab-pill ${tab === k ? "tab-on" : ""}`} onClick={() => setTab(k)}>{l}</button>
+          <div style={{ background: "rgba(195,208,245,.2)", borderRadius: 40, padding: 5, display: "flex", gap: 2, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            {[["log","Log"],["prs","PRs"],["progress","Progress"],["coach","Coach"],["about","About"]].map(([k,l]) => (
+              <button key={k} className={`tab-pill ${tab === k ? "tab-on" : ""}`} onClick={() => setTab(k)} style={{ whiteSpace: "nowrap", fontSize: 12, padding: "10px 14px" }}>{l}</button>
             ))}
           </div>
         </div>
@@ -1096,6 +1348,17 @@ export default function App() {
               )}
             </div>
           )}
+
+          {/* ── COACH TAB ── */}
+          {tab === "coach" && (
+            <CoachTab workouts={workouts} categories={categories} user={user} />
+          )}
+
+          {/* ── ABOUT TAB ── */}
+          {tab === "about" && (
+            <AboutTab />
+          )}
+
         </div>
       </div>
     </div>
