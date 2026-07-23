@@ -125,13 +125,13 @@ function DrumPicker({ value, onChange, min = 1, max = 100, step = 1, label }) {
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-      {label && <div style={{ fontSize: 10, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 6, paddingTop: 10 }}>{label}</div>}
+      {label && <div style={{ fontSize: 10, fontWeight: 700, color: "#888888", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 6, paddingTop: 10 }}>{label}</div>}
       <div ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={() => { accum.current = 0; }}
         style={{ userSelect: "none", touchAction: "none", cursor: "ns-resize", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
         {rows.map((r, i) => (
           <div key={i} onClick={() => { if (i < 2) change(step * (2 - i)); else if (i > 2) change(-step * (i - 2)); }}
             style={{ height: r.selected ? 58 : i === 1 || i === 3 ? 42 : 32, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", cursor: r.selected ? "default" : "pointer" }}>
-            <span style={{ fontSize: r.size, color: `rgba(20,30,160,${r.opacity})`, fontWeight: r.fw, fontFamily: "'Poppins',sans-serif", transition: "all .15s", letterSpacing: r.selected ? "-0.5px" : "0" }}>{r.val}</span>
+            <span style={{ fontSize: r.size, color: `rgba(255,255,255,${r.opacity})`, fontWeight: r.fw, fontFamily: "'Poppins',sans-serif", transition: "all .15s", letterSpacing: r.selected ? "-0.5px" : "0" }}>{r.val}</span>
           </div>
         ))}
       </div>
@@ -143,8 +143,8 @@ function DrumPicker({ value, onChange, min = 1, max = 100, step = 1, label }) {
 const PLATE_SIZES = [2.5, 5, 10, 25, 35, 45];
 const PLATE_COLORS = {
   2.5: { bg: "#e8e8f0", text: "#8888a8", h: 28 }, 5: { bg: "#d0d0e0", text: "#6868a0", h: 36 },
-  10: { bg: "#a8c8f5", text: "#1a1a1a", h: 48 }, 25: { bg: "#90d098", text: "#1a6030", h: 60 },
-  35: { bg: "#f0d060", text: "#806010", h: 68 }, 45: { bg: "#6090e0", text: "#fff", h: 76 }
+  10: { bg: "#a8c8f5", text: "#ffffff", h: 48 }, 25: { bg: "#90d098", text: "#1a6030", h: 60 },
+  35: { bg: "#f0d060", text: "#806010", h: 68 }, 45: { bg: "#00c805", text: "#fff", h: 76 }
 };
 const BAR_OPTIONS = [
   { name: "Standard Bar", short: "45lb Bar", weight: 45 },
@@ -166,7 +166,7 @@ function PlateCalculator({ onWeightChange }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {BAR_OPTIONS.map(b => (
             <button key={b.name} onClick={() => setBar(b)}
-              style={{ flex: 1, minWidth: "45%", padding: "9px 6px", borderRadius: 12, border: `1.5px solid ${bar.name === b.name ? "#a8c8f5" : "rgba(180,185,220,.3)"}`, background: bar.name === b.name ? "rgba(168,200,245,.15)" : "rgba(255,255,255,.5)", color: bar.name === b.name ? "#3060b0" : "#a0a8cc", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              style={{ flex: 1, minWidth: "45%", padding: "9px 6px", borderRadius: 12, border: `1.5px solid ${bar.name === b.name ? "#a8c8f5" : "rgba(255,255,255,.1)"}`, background: bar.name === b.name ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.95)", color: bar.name === b.name ? "#00c805" : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
               {b.short}
             </button>
           ))}
@@ -185,7 +185,7 @@ function PlateCalculator({ onWeightChange }) {
       </div>
       <div style={{ marginBottom: 14 }}>
         <div className="lbl">Rack (tap × to remove)</div>
-        <div style={{ background: "rgba(255,255,255,.6)", borderRadius: 16, padding: "16px 12px", border: "1.5px solid rgba(255,255,255,.85)", minHeight: 80, display: "flex", alignItems: "center", justifyContent: "center", overflowX: "auto" }}>
+        <div style={{ background: "rgba(22,22,22,.98)", borderRadius: 16, padding: "16px 12px", border: "1.5px solid rgba(255,255,255,.07)", minHeight: 80, display: "flex", alignItems: "center", justifyContent: "center", overflowX: "auto" }}>
           {plates.length === 0 ? <span style={{ fontSize: 13, color: "#c0c8e0" }}>No plates added yet</span> : (
             <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
               {displayPlates.map((w, i) => { const c = PLATE_COLORS[w]; const origIdx = plates.length - 1 - i; return (
@@ -199,7 +199,7 @@ function PlateCalculator({ onWeightChange }) {
               ); })}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "0 4px" }}>
                 <div style={{ width: 40, height: 16, background: "linear-gradient(135deg,#c8d0e8,#a0aac8)", borderRadius: 8 }} />
-                <span style={{ fontSize: 9, color: "#a0a8cc", marginTop: 3, fontWeight: 600 }}>{bar.weight}lb</span>
+                <span style={{ fontSize: 9, color: "#888888", marginTop: 3, fontWeight: 600 }}>{bar.weight}lb</span>
               </div>
               {[...displayPlates].reverse().map((w, i) => { const c = PLATE_COLORS[w]; return (
                 <div key={i} style={{ width: 32, height: c.h, background: c.bg, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -209,11 +209,11 @@ function PlateCalculator({ onWeightChange }) {
             </div>
           )}
         </div>
-        {plates.length > 0 && <button onClick={() => setPlates([])} style={{ marginTop: 8, background: "none", border: "1.5px solid rgba(220,100,100,.3)", borderRadius: 10, padding: "6px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, color: "#c06060", cursor: "pointer", fontWeight: 600 }}>Clear all</button>}
+        {plates.length > 0 && <button onClick={() => setPlates([])} style={{ marginTop: 8, background: "none", border: "1.5px solid rgba(220,100,100,.3)", borderRadius: 10, padding: "6px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, color: "#ff4444", cursor: "pointer", fontWeight: 600 }}>Clear all</button>}
       </div>
-      <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Total Weight</span>
-        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+      <div style={{ background: "rgba(0,200,5,.08)", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(0,200,5,.2)" }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "#00c805" }}>Total Weight</span>
+        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#ffffff" }}>{total} <span style={{ fontSize: 14, color: "#888888" }}>lbs</span></span>
       </div>
     </div>
   );
@@ -230,31 +230,31 @@ function DumbbellPicker({ onWeightChange }) {
     <div>
       <div style={{ marginBottom: 14 }}>
         <div className="lbl">Log As</div>
-        <div style={{ display: "flex", background: "rgba(195,208,245,.2)", borderRadius: 30, padding: 4, width: "fit-content" }}>
+        <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 30, padding: 4, width: "fit-content" }}>
           {[false,true].map(val => (
             <button key={String(val)} onClick={() => setCombined(val)}
-              style={{ padding: "8px 16px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: combined === val ? "rgba(255,255,255,.9)" : "none", color: combined === val ? "#1a1a1a" : "#a0a8cc" }}>
+              style={{ padding: "8px 16px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: combined === val ? "rgba(255,255,255,.9)" : "none", color: combined === val ? "#ffffff" : "#888888" }}>
               {val ? "Combined Total" : "Single DB"}
             </button>
           ))}
         </div>
-        <p style={{ fontSize: 11, color: "#b0b8d8", marginTop: 6 }}>{combined ? "Logs both DBs combined (e.g. 30+30 = 60 lbs)" : "Logs one DB weight (e.g. 30 lbs)"}</p>
+        <p style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>{combined ? "Logs both DBs combined (e.g. 30+30 = 60 lbs)" : "Logs one DB weight (e.g. 30 lbs)"}</p>
       </div>
       <div style={{ marginBottom: 16 }}>
         <div className="lbl">Select Dumbbell Weight</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {DB_WEIGHTS.map(w => (
             <button key={w} onClick={() => setSelected(w)}
-              style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(180,185,220,.3)"}`, background: selected === w ? "linear-gradient(130deg,rgba(168,200,255,.3),rgba(168,240,192,.2))" : "rgba(255,255,255,.6)", color: selected === w ? "#3060b0" : "#6068a0", fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
+              style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(255,255,255,.1)"}`, background: selected === w ? "rgba(0,200,5,.12)" : "rgba(24,24,24,.98)", color: selected === w ? "#00c805" : "#6068a0", fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
               {w}
             </button>
           ))}
         </div>
       </div>
       {selected !== null && (
-        <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>{combined ? `${selected} + ${selected}` : "Single DB"}</span>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{total} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+        <div style={{ background: "rgba(0,200,5,.08)", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(0,200,5,.2)" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#00c805" }}>{combined ? `${selected} + ${selected}` : "Single DB"}</span>
+          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#ffffff" }}>{total} <span style={{ fontSize: 14, color: "#888888" }}>lbs</span></span>
         </div>
       )}
     </div>
@@ -270,19 +270,139 @@ function PulleyPicker({ onWeightChange }) {
   return (
     <div>
       <div className="lbl">Select Cable / Pulley Weight (lbs)</div>
-      <p style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 14 }}>Tap the weight shown on the cable machine stack</p>
+      <p style={{ fontSize: 11, color: "#555555", marginBottom: 14 }}>Tap the weight shown on the cable machine stack</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
         {PULLEY_WEIGHTS.map(w => (
           <button key={w} onClick={() => setSelected(w)}
-            style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(180,185,220,.3)"}`, background: selected === w ? "linear-gradient(130deg,rgba(168,200,255,.3),rgba(168,240,192,.2))" : "rgba(255,255,255,.6)", color: selected === w ? "#1a1a1a" : "#6068a0", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
+            style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${selected === w ? "#a8c8f5" : "rgba(255,255,255,.1)"}`, background: selected === w ? "rgba(0,200,5,.12)" : "rgba(24,24,24,.98)", color: selected === w ? "#ffffff" : "#6068a0", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", minWidth: 52 }}>
             {w}
           </button>
         ))}
       </div>
       {selected !== null && (
-        <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Pulley Weight</span>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{selected} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+        <div style={{ background: "rgba(0,200,5,.08)", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(0,200,5,.2)" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#00c805" }}>Pulley Weight</span>
+          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#ffffff" }}>{selected} <span style={{ fontSize: 14, color: "#888888" }}>lbs</span></span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─── Searchable Exercise Select ───────────────────────────────────────────────
+function SearchableExerciseSelect({ categories, value, onChange }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Flatten all exercises with their category
+  const allExercises = useMemo(() => {
+    const list = [];
+    Object.entries(categories).forEach(([cat, exercises]) => {
+      exercises.forEach(ex => list.push({ name: ex, category: cat }));
+    });
+    return list;
+  }, [categories]);
+
+  // Filter based on query
+  const filtered = useMemo(() => {
+    if (!query.trim()) return allExercises;
+    const q = query.toLowerCase().trim();
+    return allExercises.filter(ex => ex.name.toLowerCase().includes(q));
+  }, [query, allExercises]);
+
+  // Group filtered results by category
+  const groupedFiltered = useMemo(() => {
+    const grouped = {};
+    filtered.forEach(ex => {
+      if (!grouped[ex.category]) grouped[ex.category] = [];
+      grouped[ex.category].push(ex.name);
+    });
+    return grouped;
+  }, [filtered]);
+
+  // Close when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("touchstart", handler); };
+  }, []);
+
+  const select = (name) => {
+    onChange(name);
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div ref={dropdownRef} style={{ position: "relative", marginBottom: 10 }}>
+      {/* Selected value display / search trigger */}
+      <div
+        onClick={() => { setOpen(!open); setTimeout(() => inputRef.current?.focus(), 50); }}
+        style={{ background: "rgba(28,28,28,.98)", border: `1.5px solid ${open ? "#a8c8f5" : "rgba(255,255,255,.1)"}`, borderRadius: open ? "12px 12px 0 0" : 12, color: "#ffffff", padding: "11px 15px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 14, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: open ? "0 0 0 3px rgba(168,200,245,.18)" : "none", transition: "all .2s" }}>
+        <span style={{ fontWeight: 500 }}>{value || "Select exercise"}</span>
+        <span style={{ color: "#888888", fontSize: 12 }}>{open ? "▲" : "▼"}</span>
+      </div>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "rgba(15,15,15,.99)", backdropFilter: "blur(16px)", border: "1.5px solid rgba(0,200,5,.25)", borderTop: "none", borderRadius: "0 0 14px 14px", zIndex: 50, maxHeight: 320, overflowY: "auto", boxShadow: "0 12px 32px rgba(255,255,255,.08)" }}>
+          {/* Search input */}
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,.06)", position: "sticky", top: 0, background: "rgba(15,15,15,.99)" }}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Type to search exercises..."
+              style={{ width: "100%", background: "rgba(0,200,5,.08)", border: "1.5px solid rgba(0,200,5,.2)", borderRadius: 10, padding: "9px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#ffffff", outline: "none" }}
+            />
+            {query && (
+              <button onClick={() => setQuery("")}
+                style={{ position: "absolute", right: 22, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#888888", cursor: "pointer", fontSize: 16 }}>×</button>
+            )}
+          </div>
+
+          {/* Results */}
+          {filtered.length === 0 && (
+            <div style={{ padding: "16px", textAlign: "center", fontSize: 13, color: "#555555" }}>No exercises found for "{query}"</div>
+          )}
+          {Object.entries(groupedFiltered).map(([cat, exercises]) => (
+            <div key={cat}>
+              <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, color: "#888888", letterSpacing: 1.5, textTransform: "uppercase", background: "rgba(255,255,255,.05,.08)" }}>{cat}</div>
+              {exercises.map(ex => (
+                <button key={ex} onClick={() => select(ex)}
+                  style={{ width: "100%", padding: "11px 16px", border: "none", background: ex === value ? "rgba(0,200,5,.1)" : "none", color: ex === value ? "#00c805" : "#ffffff", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: ex === value ? 600 : 400, textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+                  <span>
+                    {query ? (
+                      // Highlight matching letters
+                      (() => {
+                        const q = query.toLowerCase();
+                        const idx = ex.toLowerCase().indexOf(q);
+                        if (idx === -1) return ex;
+                        return (
+                          <span>
+                            {ex.slice(0, idx)}
+                            <strong style={{ color: "#00c805", background: "rgba(168,200,245,.2)", borderRadius: 3, padding: "0 2px" }}>{ex.slice(idx, idx + q.length)}</strong>
+                            {ex.slice(idx + q.length)}
+                          </span>
+                        );
+                      })()
+                    ) : ex}
+                  </span>
+                  {ex === value && <span style={{ color: "#00c805", fontSize: 14 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -295,11 +415,11 @@ function WeightInput({ onWeightChange }) {
   const [manualVal, setManualVal] = useState("");
   const MODES = [{ key: "barbell", label: "Plate Loaded" }, { key: "dumbbell", label: "Dumbbell" }, { key: "pulley", label: "Pulley" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
   return (
-    <div style={{ background: "rgba(255,255,255,.55)", borderRadius: 18, border: "1.5px solid rgba(255,255,255,.85)", padding: 18 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(195,208,245,.2)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
+    <div style={{ background: "rgba(20,20,20,.95)", borderRadius: 18, border: "1.5px solid rgba(255,255,255,.07)", padding: 18 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(255,255,255,.05)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
         {MODES.map(m => (
           <button key={m.key} onClick={() => { setMode(m.key); if (m.key === "bodyweight") onWeightChange(0); }}
-            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#1a1a1a" : "#a0a8cc", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
+            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#ffffff" : "#888888", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
             {m.label}
           </button>
         ))}
@@ -308,21 +428,21 @@ function WeightInput({ onWeightChange }) {
       {mode === "dumbbell"   && <DumbbellPicker  onWeightChange={onWeightChange} />}
       {mode === "pulley" && <PulleyPicker onWeightChange={onWeightChange} />}
       {mode === "bodyweight" && (
-        <div style={{ background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Bodyweight</div>
-          <div style={{ fontSize: 12, color: "#7090c0" }}>Logged as 0 lbs — no added weight</div>
+        <div style={{ background: "rgba(0,200,5,.06)", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(0,200,5,.2)" }}>
+          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Bodyweight</div>
+          <div style={{ fontSize: 12, color: "#888888" }}>Logged as 0 lbs — no added weight</div>
         </div>
       )}
       {mode === "manual" && (
         <div>
           <div className="lbl">Enter Any Weight</div>
-          <p style={{ fontSize: 12, color: "#b0b8d8", marginBottom: 14 }}>For unusual weights like 2.5, 7, 62 lbs etc.</p>
+          <p style={{ fontSize: 12, color: "#555555", marginBottom: 14 }}>For unusual weights like 2.5, 7, 62 lbs etc.</p>
           <input type="number" value={manualVal} onChange={e => { setManualVal(e.target.value); onWeightChange(Number(e.target.value)); }} placeholder="e.g. 7.5"
-            style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 12, color: "#1a1a1a", padding: "11px 15px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, outline: "none", textAlign: "center" }} />
+            style={{ background: "rgba(28,28,28,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 12, color: "#ffffff", padding: "11px 15px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, outline: "none", textAlign: "center" }} />
           {manualVal && (
-            <div style={{ marginTop: 14, background: "linear-gradient(130deg,rgba(168,200,255,.2),rgba(168,240,192,.2))", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(168,210,245,.3)" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#5070b0" }}>Total Weight</span>
-              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a" }}>{manualVal} <span style={{ fontSize: 14, color: "#7090c0" }}>lbs</span></span>
+            <div style={{ marginTop: 14, background: "rgba(0,200,5,.08)", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid rgba(0,200,5,.2)" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#00c805" }}>Total Weight</span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#ffffff" }}>{manualVal} <span style={{ fontSize: 14, color: "#888888" }}>lbs</span></span>
             </div>
           )}
         </div>
@@ -349,42 +469,42 @@ const VIEWPORT_FIX = () => {
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Poppins:wght@300;400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
-  .glass{background:rgba(255,255,255,.58);backdrop-filter:blur(18px);border:1.5px solid rgba(255,255,255,.85);border-radius:22px;box-shadow:0 8px 32px rgba(160,185,230,.12)}
-  .tab-pill{background:none;border:none;cursor:pointer;padding:10px 16px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;border-radius:30px;transition:all .22s;color:#a0a8cc}
-  .tab-on{background:rgba(255,255,255,.88);color:#1a1a1a;box-shadow:0 4px 16px rgba(150,175,235,.22)}
-  .field{background:rgba(255,255,255,.72);border:1.5px solid rgba(180,185,220,.32);border-radius:12px;color:#1a1a1a;padding:11px 15px;width:100%;font-family:'Poppins',sans-serif;font-size:14px;outline:none}
-  select.field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a0a8d0' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-color:rgba(255,255,255,.72);padding-right:34px}
-  .save-btn{background:linear-gradient(130deg,#b8dcff 0%,#b8f0cc 100%);border:none;border-radius:14px;padding:14px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:#1a3d2e;width:100%;box-shadow:0 6px 22px rgba(160,210,245,.38);transition:all .2s}
+  .glass{background:rgba(18,18,18,.98);backdrop-filter:blur(18px);border:1.5px solid rgba(255,255,255,.07);border-radius:22px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+  .tab-pill{background:none;border:none;cursor:pointer;padding:10px 16px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;border-radius:30px;transition:all .22s;color:#666666}
+  .tab-on{background:rgba(255,255,255,.1);color:#ffffff;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+  .field{background:rgba(28,28,28,.98);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#ffffff;padding:11px 15px;width:100%;font-family:'Poppins',sans-serif;font-size:14px;outline:none}
+  select.field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a0a8d0' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-color:rgba(28,28,28,.98);padding-right:34px}
+  .save-btn{background:#00c805;border:none;border-radius:14px;padding:14px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:#000000;width:100%;box-shadow:0 6px 22px rgba(0,200,5,.25);transition:all .2s}
   .save-btn:hover{transform:translateY(-2px)}
-  .add-set-btn{background:rgba(255,255,255,.5);border:1.5px dashed rgba(168,190,240,.55);border-radius:12px;padding:10px;font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;color:#8098c8;width:100%;font-weight:500}
-  .pr-row{background:rgba(255,255,255,.6);border:1.5px solid rgba(255,255,255,.88);border-radius:18px;padding:18px 20px;margin-bottom:11px;display:flex;justify-content:space-between;align-items:center;transition:transform .2s}
+  .add-set-btn{background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.15);border-radius:12px;padding:10px;font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;color:#888888;width:100%;font-weight:500}
+  .pr-row{background:rgba(22,22,22,.98);border:1.5px solid rgba(255,255,255,.07);border-radius:18px;padding:18px 20px;margin-bottom:11px;display:flex;justify-content:space-between;align-items:center;transition:transform .2s}
   .pr-row:hover{transform:translateY(-2px)}
-  .chip{padding:7px 15px;font-size:12px;font-weight:500;cursor:pointer;border-radius:30px;border:1.5px solid rgba(180,185,225,.3);background:rgba(255,255,255,.5);color:#a0a8cc;transition:all .18s;font-family:'Poppins',sans-serif}
-  .chip-on{background:rgba(255,255,255,.88);color:#3040a0;border-color:#c0caee;box-shadow:0 4px 14px rgba(155,170,235,.2)}
-  .stat-box{background:rgba(255,255,255,.62);backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.88);border-radius:18px;padding:20px 18px}
-  .rm-btn{background:rgba(255,120,120,.07);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;color:#d0a0a0;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .recent-card{background:rgba(255,255,255,.5);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1.5px solid rgba(255,255,255,.82)}
-  .spill{font-size:12px;color:#7888c0;background:rgba(160,185,240,.14);padding:4px 12px;border-radius:20px;font-weight:500}
-  .drum-wrap{background:rgba(255,255,255,.72);border:1.5px solid rgba(180,185,220,.28);border-radius:16px;overflow:hidden;flex:1;position:relative}
-  .drum-wrap::after{content:'';position:absolute;left:0;right:0;top:0;height:55px;background:linear-gradient(to bottom,rgba(255,255,255,.95),transparent);pointer-events:none;z-index:2}
-  .drum-wrap::before{content:'';position:absolute;left:0;right:0;bottom:0;height:55px;background:linear-gradient(to top,rgba(255,255,255,.95),transparent);pointer-events:none;z-index:2}
-  .lbl{font-size:11px;font-weight:700;color:#a0a8cc;letter-spacing:1.2px;text-transform:uppercase;display:block;margin-bottom:8px}
-  .err-box{background:rgba(255,100,100,.1);border:1px solid rgba(255,120,120,.3);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#c05050}
-  .cat-label{font-size:10px;font-weight:700;color:#a0a8cc;letter-spacing:1.5px;text-transform:uppercase;padding:12px 0 6px;display:block}
+  .chip{padding:7px 15px;font-size:12px;font-weight:500;cursor:pointer;border-radius:30px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#888888;transition:all .18s;font-family:'Poppins',sans-serif}
+  .chip-on{background:rgba(0,200,5,.12);color:#00c805;border-color:rgba(0,200,5,.4);box-shadow:0 4px 14px rgba(0,200,5,.15)}
+  .stat-box{background:rgba(22,22,22,.98);backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.07);border-radius:18px;padding:20px 18px}
+  .rm-btn{background:rgba(255,68,68,.08);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;color:#ff4444;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .recent-card{background:rgba(20,20,20,.98);border-radius:14px;padding:14px 16px;margin-bottom:8px;border:1.5px solid rgba(255,255,255,.07)}
+  .spill{font-size:12px;color:#00c805;background:rgba(0,200,5,.1);padding:4px 12px;border-radius:20px;font-weight:500}
+  .drum-wrap{background:rgba(22,22,22,.98);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;flex:1;position:relative}
+  .drum-wrap::after{content:'';position:absolute;left:0;right:0;top:0;height:55px;background:linear-gradient(to bottom,rgba(18,18,18,.98),transparent);pointer-events:none;z-index:2}
+  .drum-wrap::before{content:'';position:absolute;left:0;right:0;bottom:0;height:55px;background:linear-gradient(to top,rgba(18,18,18,.98),transparent);pointer-events:none;z-index:2}
+  .lbl{font-size:11px;font-weight:700;color:#666666;letter-spacing:1.2px;text-transform:uppercase;display:block;margin-bottom:8px}
+  .err-box{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#ff4444}
+  .cat-label{font-size:10px;font-weight:700;color:#555555;letter-spacing:1.5px;text-transform:uppercase;padding:12px 0 6px;display:block}
   .progress-indicator{border-radius:16px;padding:16px 18px;margin-bottom:18px;border:1.5px solid}
-  .overlay{position:fixed;inset:0;background:rgba(20,25,60,.55);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
   .fade{animation:fu .3s ease}
   @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
-  html,body{width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+  html,body{width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;background:#0d0d0d}
   *{-webkit-tap-highlight-color:transparent}
 `;
 
 const BG = () => (
   <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
-    <div style={{ position: "absolute", top: -100, right: -80, width: 350, height: 350, borderRadius: "50%", background: "radial-gradient(circle,rgba(190,240,195,.55) 0%,transparent 68%)" }} />
-    <div style={{ position: "absolute", top: 160, left: -90, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(190,215,255,.5) 0%,transparent 68%)" }} />
-    <div style={{ position: "absolute", bottom: 80, right: 10, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle,rgba(255,215,240,.38) 0%,transparent 68%)" }} />
+    <div style={{ position: "absolute", top: -100, right: -80, width: 350, height: 350, borderRadius: "50%", background: "radial-gradient(circle,rgba(0,200,5,.04) 0%,transparent 68%)" }} />
+    <div style={{ position: "absolute", top: 160, left: -90, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(0,200,5,.03) 0%,transparent 68%)" }} />
+    <div style={{ position: "absolute", bottom: 80, right: 10, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle,rgba(240,180,40,.03) 0%,transparent 68%)" }} />
   </div>
 );
 
@@ -398,16 +518,16 @@ function ProgressIndicator({ weekProgress }) {
     const lastTwo = weekProgress.slice(-2);
     const weightFlat = lastTwo[1][1].maxWeight === lastTwo[0][1].maxWeight;
     const volFlat = lastTwo[1][1].totalVol === lastTwo[0][1].totalVol;
-    if (weightTrend && volumeTrend) return { msg: "You're progressing!", sub: "Weight and volume are both going up. Keep it up.", bg: "rgba(150,230,170,.15)", border: "rgba(100,200,130,.3)", color: "#1a1a1a" };
-    if (!weightFlat && volumeTrend) return { msg: "Volume is increasing!", sub: "Great work. Consider adding a little more weight soon.", bg: "rgba(168,210,255,.15)", border: "rgba(120,180,255,.3)", color: "#1a1a1a" };
+    if (weightTrend && volumeTrend) return { msg: "You're progressing!", sub: "Weight and volume are both going up. Keep it up.", bg: "rgba(0,200,5,.1)", border: "rgba(0,200,5,.25)", color: "#ffffff" };
+    if (!weightFlat && volumeTrend) return { msg: "Volume is increasing!", sub: "Great work. Consider adding a little more weight soon.", bg: "rgba(100,150,255,.1)", border: "rgba(120,180,255,.3)", color: "#ffffff" };
     if (weightFlat && volFlat) return { msg: "Plateau detected", sub: "Weight and volume have been flat. Try adding 5 lbs or one extra rep this session.", bg: "rgba(255,210,150,.15)", border: "rgba(255,180,80,.3)", color: "#a06010" };
-    return { msg: "Keep going!", sub: "Log more sessions to see your full trend.", bg: "rgba(195,208,245,.15)", border: "rgba(160,180,240,.3)", color: "#1a1a1a" };
+    return { msg: "Keep going!", sub: "Log more sessions to see your full trend.", bg: "rgba(255,255,255,.05,.15)", border: "rgba(160,180,240,.3)", color: "#ffffff" };
   }, [weekProgress]);
   if (!indicator) return null;
   return (
     <div className="progress-indicator" style={{ background: indicator.bg, borderColor: indicator.border }}>
       <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: indicator.color, marginBottom: 4 }}>{indicator.msg}</div>
-      <div style={{ fontSize: 13, color: "#6070a0" }}>{indicator.sub}</div>
+      <div style={{ fontSize: 13, color: "#888888" }}>{indicator.sub}</div>
     </div>
   );
 }
@@ -420,8 +540,8 @@ function AdminLoginModal({ onSuccess, onClose }) {
     <div className="overlay">
       <div className="glass" style={{ width: "100%", maxWidth: 340, padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Admin Access</p>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>Admin Access</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#888888", cursor: "pointer" }}>×</button>
         </div>
         <input type="password" value={pass} onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} placeholder="••••••••••••" className="field" style={{ marginBottom: 14 }} />
         {error && <div className="err-box">{error}</div>}
@@ -442,24 +562,24 @@ function AdminView({ onClose }) {
     <div className="overlay">
       <div className="glass" style={{ width: "100%", maxWidth: 440, padding: 28, maxHeight: "80vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Subscribers</p>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>Subscribers</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#888888", cursor: "pointer" }}>×</button>
         </div>
-        {emails === null && <p style={{ color: "#a0a8cc" }}>Loading...</p>}
-        {emails !== null && emails.length === 0 && <p style={{ color: "#b0b8d8" }}>No signups yet.</p>}
+        {emails === null && <p style={{ color: "#888888" }}>Loading...</p>}
+        {emails !== null && emails.length === 0 && <p style={{ color: "#555555" }}>No signups yet.</p>}
         {emails && emails.length > 0 && (
           <>
-            <div style={{ background: "rgba(168,210,245,.1)", border: "1.5px solid rgba(168,210,245,.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 18, display: "flex", justifyContent: "space-between" }}>
+            <div style={{ background: "rgba(0,200,5,.08)", border: "1.5px solid rgba(0,200,5,.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 18, display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, color: "#4a7aaf", fontWeight: 600 }}>Total subscribers</span>
-              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#1a1a1a" }}>{emails.length}</span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#ffffff" }}>{emails.length}</span>
             </div>
             {emails.map((e, i) => (
-              <div key={i} style={{ padding: "12px 0", borderBottom: "1px solid rgba(180,195,235,.2)", display: "flex", justifyContent: "space-between" }}>
-                <div><div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{e.email}</div><div style={{ fontSize: 11, color: "#b0b8d8" }}>@{e.username} · {e.joined_date}</div></div>
+              <div key={i} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", justifyContent: "space-between" }}>
+                <div><div style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{e.email}</div><div style={{ fontSize: 11, color: "#555555" }}>@{e.username} · {e.joined_date}</div></div>
               </div>
             ))}
             <button onClick={() => { const csv = "Email,Username,Joined\n" + emails.map(e => `${e.email},${e.username},${e.joined_date}`).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "subscribers.csv"; a.click(); }}
-              style={{ marginTop: 16, background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", border: "none", borderRadius: 12, padding: "12px 20px", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1a3d2e", width: "100%" }}>
+              style={{ marginTop: 16, background: "#00c805", border: "none", borderRadius: 12, padding: "12px 20px", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%" }}>
               Download CSV
             </button>
           </>
@@ -508,8 +628,8 @@ function AccountSettingsModal({ user, onUpdate, onClose }) {
     <div className="overlay">
       <div className="glass" style={{ width: "100%", maxWidth: 400, padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>Account Settings</p>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>Account Settings</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#888888", cursor: "pointer" }}>×</button>
         </div>
 
         <div style={{ marginBottom: 16 }}>
@@ -528,7 +648,7 @@ function AccountSettingsModal({ user, onUpdate, onClose }) {
         </div>
 
         {error && <div className="err-box" style={{ marginBottom: 14 }}>{error}</div>}
-        {msg && <div style={{ background: "rgba(100,200,130,.12)", border: "1.5px solid rgba(100,200,130,.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#2a7040" }}>{msg}</div>}
+        {msg && <div style={{ background: "rgba(0,200,5,.12)", border: "1.5px solid rgba(100,200,130,.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#2a7040" }}>{msg}</div>}
 
         <button onClick={saveChanges} disabled={saving} className="save-btn">
           {saving ? "Saving..." : "Save Changes"}
@@ -543,6 +663,7 @@ function EditWorkoutModal({ workout, onSave, onDelete, onClose }) {
   const [editSets, setEditSets] = useState(
     (Array.isArray(workout.sets) ? workout.sets : []).map((s, i) => ({ ...s, id: i }))
   );
+  const [editExercise, setEditExercise] = useState(workout.exercise);
   const [saving, setSaving] = useState(false);
 
   const updateSet = (i, field, val) => { const s = [...editSets]; s[i][field] = val; setEditSets(s); };
@@ -551,43 +672,47 @@ function EditWorkoutModal({ workout, onSave, onDelete, onClose }) {
     <div className="overlay" style={{ alignItems: "flex-start", paddingTop: 40, overflowY: "auto" }}>
       <div className="glass" style={{ width: "100%", maxWidth: 440, padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>Edit — {workout.exercise}</p>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#a0a8cc", cursor: "pointer" }}>×</button>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>Edit Session</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#888888", cursor: "pointer" }}>×</button>
         </div>
-        <p style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 16 }}>{workout.date}</p>
+        <p style={{ fontSize: 11, color: "#555555", marginBottom: 14 }}>{workout.date}</p>
+        <div style={{ marginBottom: 18 }}>
+          <label className="lbl">Exercise Name</label>
+          <input value={editExercise} onChange={e => setEditExercise(e.target.value)} className="field" placeholder="Exercise name" />
+        </div>
 
         {editSets.map((s, i) => (
-          <div key={s.id} style={{ background: "rgba(255,255,255,.5)", borderRadius: 14, padding: 14, marginBottom: 12, border: "1.5px solid rgba(255,255,255,.8)" }}>
+          <div key={s.id} style={{ background: "rgba(20,20,20,.95)", borderRadius: 14, padding: 14, marginBottom: 12, border: "1.5px solid rgba(255,255,255,.07)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#00c805" }}>SET {i + 1}</span>
               {editSets.length > 1 && <button onClick={() => setEditSets(editSets.filter((_, idx) => idx !== i))} style={{ background: "rgba(255,120,120,.07)", border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", color: "#d0a0a0", fontSize: 15 }}>×</button>}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <label style={{ fontSize: 10, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Reps</label>
+                <label style={{ fontSize: 10, fontWeight: 700, color: "#888888", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Reps</label>
                 <input type="number" value={s.reps} onChange={e => updateSet(i, "reps", Number(e.target.value))}
-                  style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 10, color: "#1a1a1a", padding: "10px 12px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, outline: "none", textAlign: "center" }} />
+                  style={{ background: "rgba(28,28,28,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#ffffff", padding: "10px 12px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, outline: "none", textAlign: "center" }} />
               </div>
               <div>
-                <label style={{ fontSize: 10, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Weight (lbs)</label>
+                <label style={{ fontSize: 10, fontWeight: 700, color: "#888888", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Weight (lbs)</label>
                 <input type="number" value={s.weight} onChange={e => updateSet(i, "weight", Number(e.target.value))}
-                  style={{ background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 10, color: "#1a1a1a", padding: "10px 12px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, outline: "none", textAlign: "center" }} />
+                  style={{ background: "rgba(28,28,28,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#ffffff", padding: "10px 12px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, outline: "none", textAlign: "center" }} />
               </div>
             </div>
           </div>
         ))}
 
         <button onClick={() => setEditSets([...editSets, { id: Date.now(), reps: 8, weight: 0 }])}
-          style={{ width: "100%", padding: 10, borderRadius: 12, border: "1.5px dashed rgba(168,190,240,.55)", background: "rgba(255,255,255,.5)", color: "#8098c8", fontFamily: "'Poppins',sans-serif", fontSize: 13, cursor: "pointer", marginBottom: 16 }}>
+          style={{ width: "100%", padding: 10, borderRadius: 12, border: "1.5px dashed rgba(168,190,240,.55)", background: "rgba(20,20,20,.95)", color: "#8098c8", fontFamily: "'Poppins',sans-serif", fontSize: 13, cursor: "pointer", marginBottom: 16 }}>
           + Add set
         </button>
 
-        <button onClick={() => onSave(editSets)} disabled={saving}
-          style={{ background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", border: "none", borderRadius: 14, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#1a3d2e", width: "100%", marginBottom: 10 }}>
+        <button onClick={() => onSave(editSets, editExercise.trim() || workout.exercise)} disabled={saving}
+          style={{ background: "#00c805", border: "none", borderRadius: 14, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", marginBottom: 10 }}>
           {saving ? "Saving..." : "Save Changes"}
         </button>
         <button onClick={onDelete}
-          style={{ background: "rgba(255,100,100,.08)", border: "1.5px solid rgba(255,120,120,.3)", borderRadius: 14, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#c05050", width: "100%" }}>
+          style={{ background: "rgba(255,100,100,.08)", border: "1.5px solid rgba(255,120,120,.3)", borderRadius: 14, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#ff4444", width: "100%" }}>
           Delete Workout
         </button>
       </div>
@@ -627,21 +752,21 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28 }}>
+    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28 }}>
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Progressive Overload Tracker</p>
-          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 36, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1 }}>Your fitness,<br /><em style={{ color: "#5080df", fontStyle: "italic" }}>elevated.</em></h1>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Progressive Overload Tracker</p>
+          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 36, fontWeight: 700, color: "#ffffff", lineHeight: 1.1 }}>Your fitness,<br /><em style={{ color: "#00c805", fontStyle: "italic" }}>elevated.</em></h1>
         </div>
         <div className="glass" style={{ padding: 28 }}>
-          <div style={{ display: "flex", background: "rgba(195,208,245,.2)", borderRadius: 30, padding: 4, marginBottom: 24 }}>
+          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 30, padding: 4, marginBottom: 24 }}>
             {[["login","Sign In"],["signup","Create Account"]].map(([k,l]) => (
-              <button key={k} onClick={() => { setMode(k); setError(""); }} style={{ flex: 1, padding: "9px 0", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: mode === k ? "rgba(255,255,255,.9)" : "none", color: mode === k ? "#1a1a1a" : "#a0a8cc" }}>{l}</button>
+              <button key={k} onClick={() => { setMode(k); setError(""); }} style={{ flex: 1, padding: "9px 0", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: mode === k ? "rgba(255,255,255,.9)" : "none", color: mode === k ? "#ffffff" : "#888888" }}>{l}</button>
             ))}
           </div>
           <div style={{ marginBottom: 14 }}><label className="lbl">Username</label><input value={username} onChange={e => setUsername(e.target.value)} placeholder="your_username" onKeyDown={e => e.key === "Enter" && submit()} className="field" /></div>
-          {mode === "signup" && <div style={{ marginBottom: 14 }}><label className="lbl">Email address</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" className="field" /><p style={{ fontSize: 11, color: "#b0b8d8", marginTop: 6 }}>Used to recover your account and receive updates.</p></div>}
+          {mode === "signup" && <div style={{ marginBottom: 14 }}><label className="lbl">Email address</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" className="field" /><p style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>Used to recover your account and receive updates.</p></div>}
           <div style={{ marginBottom: 20 }}><label className="lbl">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && submit()} className="field" /></div>
           {error && <div className="err-box">{error}</div>}
           <button onClick={submit} disabled={loading} className="save-btn" style={{ opacity: loading ? .7 : 1 }}>{loading ? "Signing in..." : mode === "login" ? "Sign In" : "Create Account"}</button>
@@ -652,39 +777,356 @@ function LoginScreen({ onLogin }) {
 }
 
 
+
+// ─── Progress Tab ─────────────────────────────────────────────────────────────
+function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, weekProgress, dailyProgress, maxVol, maxDailyWeight }) {
+  const [view, setView] = useState("overview");
+  const [expandedSession, setExpandedSession] = useState(null);
+
+  // Group logged exercises by category
+  const loggedByCategory = useMemo(() => {
+    const grouped = {};
+    [...new Set(workouts.map(w => w.exercise))].forEach(ex => {
+      let foundCat = "Other";
+      for (const [cat, exs] of Object.entries(categories)) {
+        if (exs.includes(ex)) { foundCat = cat; break; }
+      }
+      if (!grouped[foundCat]) grouped[foundCat] = [];
+      grouped[foundCat].push(ex);
+    });
+    return grouped;
+  }, [workouts, categories]);
+
+  // Sessions for active exercise
+  const sessions = useMemo(() => {
+    if (!activeExercise) return [];
+    return workouts
+      .filter(w => w.exercise === activeExercise)
+      .map(w => ({
+        ...w,
+        sets: Array.isArray(w.sets) ? w.sets : [],
+        maxWeight: Math.max(...(Array.isArray(w.sets) ? w.sets : []).map(s => s.weight || 0), 0),
+        totalVol: (Array.isArray(w.sets) ? w.sets : []).reduce((sum, s) => sum + (s.reps * s.weight), 0),
+        totalReps: (Array.isArray(w.sets) ? w.sets : []).reduce((sum, s) => sum + s.reps, 0),
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [workouts, activeExercise]);
+
+  const allTimeMax = useMemo(() => sessions.length ? Math.max(...sessions.map(s => s.maxWeight)) : 0, [sessions]);
+  const totalSessions = sessions.length;
+  const lastSession = sessions[0];
+
+  return (
+    <div className="fade">
+      <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Progress</p>
+      <p style={{ fontSize: 13, color: "#888888", marginBottom: 16 }}>Select an exercise to analyze your progress.</p>
+
+      {/* Overall stats */}
+      {workouts.length > 0 && (() => {
+        const totalSess = workouts.length;
+        const totalVolumeAll = workouts.reduce((sum, w) => sum + (Array.isArray(w.sets) ? w.sets : []).reduce((s2, s) => s2 + s.reps * s.weight, 0), 0);
+        const groupCount = {};
+        workouts.forEach(w => {
+          let cat = "Other";
+          for (const [c, exs] of Object.entries(categories)) { if (exs.includes(w.exercise)) { cat = c; break; } }
+          groupCount[cat] = (groupCount[cat] || 0) + 1;
+        });
+        const topGroup = Object.entries(groupCount).sort((a,b) => b[1]-a[1])[0];
+        const allEx = [...new Set(workouts.map(w => w.exercise))];
+        const maxCnt = Math.max(...Object.values(groupCount));
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>All Time Overview</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+              {[
+                { label: "Total Sessions", val: totalSess, unit: "" },
+                { label: "Exercises Logged", val: allEx.length, unit: "" },
+                { label: "Total Volume", val: totalVolumeAll >= 1000 ? `${(totalVolumeAll/1000).toFixed(1)}k` : totalVolumeAll, unit: "lbs" },
+                { label: "Most Trained", val: topGroup ? topGroup[0] : "--", unit: topGroup ? `${topGroup[1]} sessions` : "", small: true },
+              ].map(c => (
+                <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 8, textTransform: "uppercase" }}>{c.label}</div>
+                  <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 14 : 22, fontWeight: 700, color: "#ffffff", lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
+                  {c.unit && <div style={{ fontSize: 11, color: "#555555" }}>{c.unit}</div>}
+                </div>
+              ))}
+            </div>
+            <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 14 }}>Sessions by Muscle Group</p>
+              {Object.entries(groupCount).sort((a,b) => b[1]-a[1]).map(([cat, cnt]) => (
+                <div key={cat} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, color: "#aaaaaa" }}>{cat}</span>
+                    <span style={{ fontSize: 12, color: "#555555" }}>{cnt}</span>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,.06)", borderRadius: 100, height: 6, overflow: "hidden" }}>
+                    <div style={{ width: `${(cnt/maxCnt)*100}%`, height: "100%", background: "#00c805", borderRadius: 100 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>By Exercise</p>
+
+      {/* Exercise selector grouped by category */}
+      {Object.keys(loggedByCategory).length === 0 && (
+        <div className="glass" style={{ padding: 28, textAlign: "center" }}>
+          <p style={{ color: "#555555" }}>Log workouts to see your progress.</p>
+        </div>
+      )}
+      {Object.entries(loggedByCategory).map(([cat, exs]) => (
+        <div key={cat} style={{ marginBottom: 16 }}>
+          <span className="cat-label">{cat}</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {exs.map(ex => (
+              <button key={ex} className={`chip ${activeExercise === ex ? "chip-on" : ""}`}
+                onClick={() => { setActiveExercise(ex); setView("overview"); setExpandedSession(null); }}>
+                {ex}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Detail views */}
+      {activeExercise && sessions.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          {/* View switcher */}
+          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 30, padding: 4, marginBottom: 20, gap: 2 }}>
+            {[["overview","Overview"],["byweek","By Week"],["bysession","By Session"]].map(([k,l]) => (
+              <button key={k} onClick={() => setView(k)}
+                style={{ flex: 1, padding: "9px 4px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, transition: "all .2s", background: view === k ? "rgba(255,255,255,.9)" : "none", color: view === k ? "#ffffff" : "#888888", boxShadow: view === k ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {/* ── OVERVIEW ── */}
+          {view === "overview" && (
+            <div className="fade">
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>{activeExercise}</p>
+
+              {/* Quick stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                {[
+                  { label: "All Time Best", val: `${allTimeMax}`, unit: "lbs", color: "#f0b429" },
+                  { label: "Total Sessions", val: `${totalSessions}`, unit: "logged", color: "#00c805" },
+                  { label: "Last Session", val: lastSession?.date || "--", unit: "", color: "#ffffff", small: true },
+                  { label: "Last Max Weight", val: `${lastSession?.maxWeight || 0}`, unit: "lbs", color: "#ffffff" },
+                ].map(c => (
+                  <div key={c.label} className="stat-box">
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
+                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 16 : 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
+                    {c.unit && <div style={{ fontSize: 11, color: "#555555" }}>{c.unit}</div>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress indicator */}
+              {weekProgress.length >= 2 && (() => {
+                const last = weekProgress[weekProgress.length - 1][1];
+                const prev = weekProgress[weekProgress.length - 2][1];
+                const wtDiff = last.maxWeight - prev.maxWeight;
+                const volDiff = last.totalVol - prev.totalVol;
+                let msg, sub, bg, border, color;
+                if (wtDiff > 0 && volDiff > 0) { msg = "You are progressing."; sub = "Weight and volume are both going up. Keep it up."; bg = "rgba(150,230,170,.15)"; border = "rgba(100,200,130,.3)"; color = "#00c805"; }
+                else if (wtDiff === 0 && volDiff === 0) { msg = "Plateau detected."; sub = `You have been at ${last.maxWeight} lbs for a while. Try adding 5 lbs this session.`; bg = "rgba(255,210,150,.15)"; border = "rgba(255,180,80,.3)"; color = "#a06010"; }
+                else { msg = "Volume is building."; sub = "Good progress on volume. Focus on adding a little weight soon."; bg = "rgba(168,210,255,.15)"; border = "rgba(120,180,255,.3)"; color = "#00c805"; }
+                return (
+                  <div style={{ borderRadius: 16, padding: "16px 18px", marginBottom: 16, background: bg, border: `1.5px solid ${border}` }}>
+                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color, marginBottom: 4 }}>{msg}</div>
+                    <div style={{ fontSize: 13, color: "#888888" }}>{sub}</div>
+                  </div>
+                );
+              })()}
+
+              {/* Most recent session preview */}
+              {lastSession && (
+                <div className="glass" style={{ padding: 20 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#888888", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Last Session — {lastSession.date}</p>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {lastSession.sets.map((s, i) => (
+                      <span key={i} className="spill">{s.reps} × {s.weight} lbs</span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 16, marginTop: 14 }}>
+                    <span style={{ fontSize: 12, color: "#777777" }}>Max: <strong style={{ color: "#ffffff" }}>{lastSession.maxWeight} lbs</strong></span>
+                    <span style={{ fontSize: 12, color: "#777777" }}>Volume: <strong style={{ color: "#ffffff" }}>{lastSession.totalVol.toLocaleString()} lbs</strong></span>
+                    <span style={{ fontSize: 12, color: "#777777" }}>Sets: <strong style={{ color: "#ffffff" }}>{lastSession.sets.length}</strong></span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── BY WEEK ── */}
+          {view === "byweek" && (
+            <div className="fade">
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>{activeExercise} — Weekly</p>
+
+              {weekProgress.length < 2 && <p style={{ color: "#555555", fontSize: 14 }}>Log at least 2 weeks to see weekly trends.</p>}
+
+              {weekProgress.length >= 2 && (() => {
+                const last = weekProgress[weekProgress.length - 1][1];
+                const prev = weekProgress[weekProgress.length - 2][1];
+                return (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+                      {[
+                        { label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#f0b429", glow: "rgba(240,180,40,.2)" },
+                        { label: "Total Volume", val: last.totalVol.toLocaleString(), unit: "lbs", diff: last.totalVol - prev.totalVol, color: "#00c805", glow: "rgba(0,200,5,.2)" }
+                      ].map(c => (
+                        <div key={c.label} className="stat-box" style={{ boxShadow: `0 8px 28px ${c.glow}` }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
+                          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
+                          <div style={{ fontSize: 11, color: "#555555", marginBottom: 8 }}>{c.unit}</div>
+                          <div style={{ fontSize: 12, color: c.diff >= 0 ? "#00c805" : "#ff4444", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} {c.unit} vs last wk</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="glass" style={{ padding: 20 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#888888", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 18 }}>Max Weight Per Session (lbs)</p>
+                      {dailyProgress.length > 0 && (() => {
+                        const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0","#f0b8a8","#a8f0d0"];
+                        const svgW = 320, svgH = 200;
+                        const pad = { top: 20, right: 16, bottom: 48, left: 52 };
+                        const chartW = svgW - pad.left - pad.right;
+                        const chartH = svgH - pad.top - pad.bottom;
+                        const n = dailyProgress.length;
+                        const barW = Math.min(36, (chartW / Math.max(n,1)) * 0.6);
+                        const gap = chartW / Math.max(n,1);
+                        const yMax = maxDailyWeight * 1.2;
+                        const yTicks = 4;
+                        return (
+                          <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
+                            {Array.from({ length: yTicks + 1 }, (_, ti) => {
+                              const val = Math.round((yMax / yTicks) * ti);
+                              const y = pad.top + chartH - (val / yMax) * chartH;
+                              return (
+                                <g key={ti}>
+                                  <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(255,255,255,.08)" strokeWidth="1" strokeDasharray="4,3" />
+                                  <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#888888" fontFamily="Poppins,sans-serif">{val}</text>
+                                </g>
+                              );
+                            })}
+                            <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(255,255,255,.15)" strokeWidth="1.5" />
+                            <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(255,255,255,.15)" strokeWidth="1.5" />
+                            <text x={10} y={pad.top + chartH/2} textAnchor="middle" fontSize="8" fill="#888888" fontFamily="Poppins,sans-serif" transform={`rotate(-90,10,${pad.top + chartH/2})`}>lbs</text>
+                            {dailyProgress.map(([day, v], i) => {
+                              const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
+                              const x = pad.left + gap * i + gap/2 - barW/2;
+                              const y = pad.top + chartH - barH;
+                              const isLatest = i === n - 1;
+                              const d = new Date(day + "T12:00:00");
+                              const label = `${d.getMonth()+1}/${d.getDate()}`;
+                              return (
+                                <g key={day}>
+                                  <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#00c805" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.75} />
+                                  <text x={x + barW/2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="8" fill={isLatest ? "#ffffff" : "#888888"} fontFamily="Poppins,sans-serif" fontWeight={isLatest ? "700" : "400"}>{label}</text>
+                                  <text x={x + barW/2} y={y - 5} textAnchor="middle" fontSize="8" fill={isLatest ? "#ffffff" : "#888888"} fontFamily="Poppins,sans-serif" fontWeight={isLatest ? "700" : "400"}>{v.maxWeight}</text>
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        );
+                      })()}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* ── BY SESSION ── */}
+          {view === "bysession" && (
+            <div className="fade">
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>{activeExercise} — All Sessions</p>
+              <p style={{ fontSize: 13, color: "#888888", marginBottom: 16 }}>Tap any session to see full details.</p>
+
+              {sessions.length === 0 && <p style={{ color: "#555555" }}>No sessions logged yet.</p>}
+
+              {sessions.map((s, i) => (
+                <div key={s.id || i} style={{ marginBottom: 10 }}>
+                  <button onClick={() => setExpandedSession(expandedSession === i ? null : i)}
+                    style={{ width: "100%", background: expandedSession === i ? "rgba(24,24,24,.95)" : "rgba(22,22,22,.95)", border: `1.5px solid ${expandedSession === i ? "rgba(168,200,245,.5)" : "rgba(255,255,255,.07)"}`, borderRadius: expandedSession === i ? "16px 16px 0 0" : 16, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", transition: "all .2s" }}>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{s.date}</div>
+                      <div style={{ fontSize: 12, color: "#777777" }}>{s.sets.length} sets · Max {s.maxWeight} lbs · Vol {s.totalVol.toLocaleString()} lbs</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {i === 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", background: "rgba(0,200,5,.12)", padding: "3px 10px", borderRadius: 20 }}>Latest</span>}
+                      <span style={{ color: "#888888", fontSize: 16 }}>{expandedSession === i ? "▲" : "▼"}</span>
+                    </div>
+                  </button>
+
+                  {expandedSession === i && (
+                    <div style={{ background: "rgba(24,24,24,.98)", borderRadius: "0 0 16px 16px", border: "1.5px solid rgba(168,200,245,.5)", borderTop: "none", padding: "16px 18px" }}>
+                      {/* Sets table */}
+                      <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr", gap: "0 8px", marginBottom: 14 }}>
+                        {["Set","Reps","Weight","Volume"].map(h => (
+                          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,.06)", textTransform: "uppercase" }}>{h}</div>
+                        ))}
+                        {s.sets.map((set, si) => [
+                          <div key={`n${si}`} style={{ fontSize: 13, fontWeight: 700, color: "#00c805", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)" }}>{si + 1}</div>,
+                          <div key={`r${si}`} style={{ fontSize: 13, color: "#ffffff", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)", fontWeight: 600 }}>{set.reps}</div>,
+                          <div key={`w${si}`} style={{ fontSize: 13, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)", fontWeight: set.weight === s.maxWeight ? 700 : 600 }}>{set.weight} lbs</div>,
+                          <div key={`v${si}`} style={{ fontSize: 12, color: "#777777", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)" }}>{set.reps * set.weight}</div>
+                        ])}
+                      </div>
+                      {/* Session totals */}
+                      <div style={{ display: "flex", gap: 20, paddingTop: 8 }}>
+                        <span style={{ fontSize: 12, color: "#777777" }}>Total reps: <strong style={{ color: "#ffffff" }}>{s.totalReps}</strong></span>
+                        <span style={{ fontSize: 12, color: "#777777" }}>Total volume: <strong style={{ color: "#ffffff" }}>{s.totalVol.toLocaleString()} lbs</strong></span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── About Tab ────────────────────────────────────────────────────────────────
 function AboutTab() {
   return (
     <div className="fade">
       <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
-        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>What is Iron Log</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>Iron Log is a workout tracker built around one idea: you should always be doing a little more than last time. More weight. More reps. More effort. That is how your body grows.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>Every time you open this app, your job is simple. Beat what you did before. Even by one rep. Even by five pounds. That is enough.</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>What is Iron Log</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>Iron Log is a workout tracker built around one idea: you should always be doing a little more than last time. More weight. More reps. More effort. That is how your body grows.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8 }}>Every time you open this app, your job is simple. Beat what you did before. Even by one rep. Even by five pounds. That is enough.</p>
       </div>
 
       <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
-        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>What is Progressive Overload</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>Progressive overload means gradually increasing the demand you place on your muscles over time. Your body adapts to stress. Once it adapts, you need to add more stress to keep growing.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>This does not mean going heavier every single session. It means making small, consistent improvements over weeks and months. That could be one extra rep, a slightly heavier weight, or less rest between sets.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>The people who make the most progress are not the ones who train the hardest one time. They are the ones who train consistently and improve a little bit every week.</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>What is Progressive Overload</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>Progressive overload means gradually increasing the demand you place on your muscles over time. Your body adapts to stress. Once it adapts, you need to add more stress to keep growing.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>This does not mean going heavier every single session. It means making small, consistent improvements over weeks and months. That could be one extra rep, a slightly heavier weight, or less rest between sets.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8 }}>The people who make the most progress are not the ones who train the hardest one time. They are the ones who train consistently and improve a little bit every week.</p>
       </div>
 
       <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
-        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>What is a 1RM</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>1RM stands for one rep max. It is the maximum amount of weight you can lift for a single rep of any given exercise. It is the benchmark that defines your current strength level.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>You do not need to test your 1RM to use this app. But understanding it helps you set smarter goals. Most people train between 60 and 85 percent of their 1RM depending on whether they are building size, strength, or endurance.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>As your 1RM goes up over time, your strength is going up. That is the whole point.</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>What is a 1RM</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>1RM stands for one rep max. It is the maximum amount of weight you can lift for a single rep of any given exercise. It is the benchmark that defines your current strength level.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>You do not need to test your 1RM to use this app. But understanding it helps you set smarter goals. Most people train between 60 and 85 percent of their 1RM depending on whether they are building size, strength, or endurance.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8 }}>As your 1RM goes up over time, your strength is going up. That is the whole point.</p>
       </div>
 
       <div className="glass" style={{ padding: 28, marginBottom: 16 }}>
-        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>The Philosophy</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>One more rep. One more plate. That is it.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 12 }}>Not every session will feel good. Some days the weight feels heavy and the motivation is not there. That is normal. Show up anyway. Do the work. Log it. Come back next time and try to do a little more.</p>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8 }}>The log does not lie. If you keep showing up and keep pushing, the numbers will go up. And when the numbers go up, so does everything else.</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>The Philosophy</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>One more rep. One more plate. That is it.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8, marginBottom: 12 }}>Not every session will feel good. Some days the weight feels heavy and the motivation is not there. That is normal. Show up anyway. Do the work. Log it. Come back next time and try to do a little more.</p>
+        <p style={{ fontSize: 14, color: "#aaaaaa", lineHeight: 1.8 }}>The log does not lie. If you keep showing up and keep pushing, the numbers will go up. And when the numbers go up, so does everything else.</p>
       </div>
 
       <div style={{ textAlign: "center", padding: "8px 0 24px" }}>
-        <p style={{ fontSize: 12, color: "#b0b8d8" }}>Iron Log. Built to push you forward.</p>
+        <p style={{ fontSize: 12, color: "#555555" }}>Iron Log. Built to push you forward.</p>
       </div>
     </div>
   );
@@ -824,15 +1266,15 @@ ${context}`;
     <div className="fade" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 220px)", minHeight: 400 }}>
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>AI Coach</p>
-        <p style={{ fontSize: 13, color: "#a0a8cc" }}>Powered by your workout data. Ask anything.</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>AI Coach</p>
+        <p style={{ fontSize: 13, color: "#888888" }}>Powered by your workout data. Ask anything.</p>
       </div>
 
       {/* Chat messages */}
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: 16 }}>
         {messages.length === 0 && !loading && (
           <div className="glass" style={{ padding: 24, textAlign: "center" }}>
-            <p style={{ color: "#b0b8d8", fontSize: 14 }}>Loading your coaching session...</p>
+            <p style={{ color: "#555555", fontSize: 14 }}>Loading your coaching session...</p>
           </div>
         )}
 
@@ -840,9 +1282,9 @@ ${context}`;
           <div className="glass" style={{ padding: 24 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               {[0,1,2].map(i => (
-                <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#a0a8cc", animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+                <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#888888", animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
               ))}
-              <span style={{ fontSize: 13, color: "#a0a8cc", marginLeft: 8 }}>Analyzing your training data...</span>
+              <span style={{ fontSize: 13, color: "#888888", marginLeft: 8 }}>Analyzing your training data...</span>
             </div>
           </div>
         )}
@@ -850,28 +1292,28 @@ ${context}`;
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: 14, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
             {m.role === "assistant" && (
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", display: "flex", alignItems: "center", justifyContent: "center", marginRight: 10, flexShrink: 0, fontSize: 14, fontWeight: 700, color: "#1a3d2e" }}>C</div>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#00c805", display: "flex", alignItems: "center", justifyContent: "center", marginRight: 10, flexShrink: 0, fontSize: 14, fontWeight: 700, color: "#000000" }}>C</div>
             )}
             <div style={{
               maxWidth: "82%",
-              background: m.role === "user" ? "linear-gradient(130deg,#b8dcff,#b8f0cc)" : "rgba(255,255,255,.75)",
+              background: m.role === "user" ? "#00c805" : "rgba(25,25,25,.98)",
               borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
               padding: "12px 16px",
-              border: "1.5px solid rgba(255,255,255,.85)",
+              border: "1.5px solid rgba(255,255,255,.07)",
               backdropFilter: "blur(12px)"
             }}>
-              <p style={{ fontSize: 14, color: "#1a1a1a", lineHeight: 1.75, whiteSpace: "pre-wrap", fontFamily: "'Poppins',sans-serif" }}>{m.content}</p>
+              <p style={{ fontSize: 14, color: "#ffffff", lineHeight: 1.75, whiteSpace: "pre-wrap", fontFamily: "'Poppins',sans-serif" }}>{m.content}</p>
             </div>
           </div>
         ))}
 
         {loading && messages.length > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#1a3d2e", flexShrink: 0 }}>C</div>
-            <div style={{ background: "rgba(255,255,255,.75)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", border: "1.5px solid rgba(255,255,255,.85)" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#00c805", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#000000", flexShrink: 0 }}>C</div>
+            <div style={{ background: "rgba(24,24,24,.95)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", border: "1.5px solid rgba(255,255,255,.07)" }}>
               <div style={{ display: "flex", gap: 5 }}>
                 {[0,1,2].map(i => (
-                  <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#a0a8cc", animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
+                  <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#888888", animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
                 ))}
               </div>
             </div>
@@ -881,18 +1323,18 @@ ${context}`;
       </div>
 
       {/* Input */}
-      <div style={{ display: "flex", gap: 10, paddingTop: 12, borderTop: "1.5px solid rgba(180,195,235,.2)" }}>
+      <div style={{ display: "flex", gap: 10, paddingTop: 12, borderTop: "1.5px solid rgba(255,255,255,.06)" }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && input.trim() && !loading) { e.preventDefault(); sendMessage(input.trim()); } }}
           placeholder="Ask your coach anything..."
-          style={{ flex: 1, background: "rgba(255,255,255,.72)", border: "1.5px solid rgba(180,185,220,.32)", borderRadius: 24, color: "#1a1a1a", padding: "12px 18px", fontFamily: "'Poppins',sans-serif", fontSize: 14, outline: "none" }}
+          style={{ flex: 1, background: "rgba(28,28,28,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 24, color: "#ffffff", padding: "12px 18px", fontFamily: "'Poppins',sans-serif", fontSize: 14, outline: "none" }}
         />
         <button
           onClick={() => { if (input.trim() && !loading) sendMessage(input.trim()); }}
           disabled={loading || !input.trim()}
-          style={{ background: "linear-gradient(130deg,#b8dcff,#b8f0cc)", border: "none", borderRadius: "50%", width: 46, height: 46, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: loading || !input.trim() ? 0.5 : 1 }}>
+          style={{ background: "#00c805", border: "none", borderRadius: "50%", width: 46, height: 46, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: loading || !input.trim() ? 0.5 : 1 }}>
           ↑
         </button>
       </div>
@@ -1044,11 +1486,11 @@ export default function App() {
   const maxDailyWeight = useMemo(() => Math.max(...dailyProgress.map(([, v]) => v.maxWeight), 1), [dailyProgress]);
 
   if (sessionLoading) return (
-    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>Iron Log</p>
-        <p style={{ fontSize: 13, color: "#a0a8cc" }}>Loading your session...</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>Iron Log</p>
+        <p style={{ fontSize: 13, color: "#888888" }}>Loading your session...</p>
       </div>
     </div>
   );
@@ -1056,7 +1498,7 @@ export default function App() {
   if (!user) return <LoginScreen onLogin={handleLogin} />;
 
   return (
-    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "linear-gradient(140deg,#deeeff 0%,#eaf6ff 25%,#edfff0 55%,#f5fff2 100%)", color: "#1a1a1a", paddingBottom: 80 }}>
+    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", color: "#ffffff", paddingBottom: 80 }}>
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       {showAdminLogin && <AdminLoginModal onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }} onClose={() => setShowAdminLogin(false)} />}
       {showAdmin && <AdminView onClose={() => setShowAdmin(false)} />}
@@ -1070,10 +1512,11 @@ export default function App() {
       {editingWorkout && (
         <EditWorkoutModal
           workout={editingWorkout}
-          onSave={async (newSets) => {
+          onSave={async (newSets, newExercise) => {
             try {
-              await sb.updateWorkout(editingWorkout.id, newSets);
-              setWorkouts(prev => prev.map(w => w.id === editingWorkout.id ? { ...w, sets: newSets } : w));
+              const { error } = await supabase.from("workouts").update({ sets: newSets, exercise: newExercise }).eq("id", editingWorkout.id);
+              if (error) throw new Error(error.message);
+              setWorkouts(prev => prev.map(w => w.id === editingWorkout.id ? { ...w, sets: newSets, exercise: newExercise } : w));
               setEditingWorkout(null);
             } catch (e) { alert("Error saving. Please try again."); }
           }}
@@ -1092,15 +1535,15 @@ export default function App() {
       <div style={{ position: "relative", zIndex: 1 }}>
         <div style={{ padding: "36px 24px 20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-            <span onClick={handleLogoTap} style={{ fontSize: 11, fontWeight: 700, color: "#a0b8d8", letterSpacing: 2, textTransform: "uppercase", cursor: "default" }}>Iron Log</span>
+            <span onClick={handleLogoTap} style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 2, textTransform: "uppercase", cursor: "default" }}>Iron Log</span>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => window.location.reload()} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 14, color: "#a0a8cc", cursor: "pointer" }}>↺</button>
-              <button onClick={() => setShowSettings(true)} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#a0a8cc", cursor: "pointer" }}>⚙</button>
-              <button onClick={handleLogout} style={{ background: "rgba(255,255,255,.6)", border: "1.5px solid rgba(180,185,220,.3)", borderRadius: 20, padding: "5px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, color: "#a0a8cc", cursor: "pointer" }}>Sign out</button>
+              <button onClick={() => window.location.reload()} style={{ background: "rgba(22,22,22,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 14, color: "#888888", cursor: "pointer" }}>↺</button>
+              <button onClick={() => setShowSettings(true)} style={{ background: "rgba(22,22,22,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#888888", cursor: "pointer" }}>⚙</button>
+              <button onClick={handleLogout} style={{ background: "rgba(22,22,22,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 20, padding: "5px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, color: "#888888", cursor: "pointer" }}>Sign out</button>
             </div>
           </div>
-          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#5080df", fontStyle: "italic" }}>{user.username}</em></h1>
-          <div style={{ background: "rgba(195,208,245,.2)", borderRadius: 40, padding: 5, display: "flex", gap: 2, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#ffffff", lineHeight: 1.1, marginBottom: 22 }}>Hey, <em style={{ color: "#00c805", fontStyle: "italic" }}>{user.username}</em></h1>
+          <div style={{ background: "rgba(255,255,255,.05)", borderRadius: 40, padding: 5, display: "flex", gap: 2, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             {[["log","Log"],["prs","PRs"],["progress","Progress"],["coach","Coach"],["about","About"]].map(([k,l]) => (
               <button key={k} className={`tab-pill ${tab === k ? "tab-on" : ""}`} onClick={() => setTab(k)} style={{ whiteSpace: "nowrap", fontSize: 12, padding: "10px 14px" }}>{l}</button>
             ))}
@@ -1113,18 +1556,16 @@ export default function App() {
           {tab === "log" && (
             <div className="fade">
               <div className="glass" style={{ padding: 24, marginBottom: 20 }}>
-                <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 22 }}>New session</p>
+                <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 22 }}>New session</p>
                 <div style={{ marginBottom: 16 }}><label className="lbl">Date</label><input type="date" className="field" value={date} onChange={e => setDate(e.target.value)} style={{ width: "auto" }} /></div>
                 <div style={{ marginBottom: 20 }}>
                   <label className="lbl">Exercise</label>
-                  <select className="field" value={selectedExercise} onChange={e => setSelectedExercise(e.target.value)} style={{ marginBottom: 10 }}>
-                    {Object.entries(categories).map(([cat, exercises]) => (
-                      <optgroup key={cat} label={`── ${cat.toUpperCase()} ──`}>
-                        {exercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
-                  <div style={{ background: "rgba(255,255,255,.5)", borderRadius: 14, padding: 14, border: "1.5px solid rgba(255,255,255,.8)" }}>
+                  <SearchableExerciseSelect
+                    categories={categories}
+                    value={selectedExercise}
+                    onChange={setSelectedExercise}
+                  />
+                  <div style={{ background: "rgba(20,20,20,.95)", borderRadius: 14, padding: 14, border: "1.5px solid rgba(255,255,255,.07)" }}>
                     <label className="lbl">Or add a custom exercise</label>
                     <input className="field" placeholder="e.g. Hip Abductor" value={customEx} onChange={e => setCustomEx(e.target.value)} style={{ marginBottom: 10 }} />
                     {customEx.trim() && (
@@ -1133,7 +1574,7 @@ export default function App() {
                         <select className="field" value={customExCategory} onChange={e => setCustomExCategory(e.target.value)}>
                           {CATEGORY_NAMES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
-                        <p style={{ fontSize: 11, color: "#b0b8d8", marginTop: 8 }}>Saved permanently to your {customExCategory} list.</p>
+                        <p style={{ fontSize: 11, color: "#555555", marginTop: 8 }}>Saved permanently to your {customExCategory} list.</p>
                       </div>
                     )}
                   </div>
@@ -1142,15 +1583,15 @@ export default function App() {
                 <div style={{ marginBottom: 22 }}>
                   <label className="lbl">Sets</label>
                   {sets.map((s, i) => (
-                    <div key={s.id} style={{ marginBottom: 24, background: "rgba(255,255,255,.4)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.8)" }}>
+                    <div key={s.id} style={{ marginBottom: 24, background: "rgba(18,18,18,.9)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.07)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#5070b0" }}>SET {i + 1}</span>
-                          {s.type === "drop" && <span style={{ fontSize: 10, fontWeight: 700, color: "#c05050", background: "rgba(240,150,150,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>DROP</span>}
-                          {s.type === "super" && <span style={{ fontSize: 10, fontWeight: 700, color: "#3060b0", background: "rgba(100,180,255,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>SUPER</span>}
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#00c805" }}>SET {i + 1}</span>
+                          {s.type === "drop" && <span style={{ fontSize: 10, fontWeight: 700, color: "#ff4444", background: "rgba(240,150,150,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>DROP</span>}
+                          {s.type === "super" && <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", background: "rgba(100,180,255,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>SUPER</span>}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{s.weight} lbs</span>}
+                          {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>{s.weight} lbs</span>}
                           {sets.length > 1 && <button className="rm-btn" onClick={() => setSets(sets.filter((_, idx) => idx !== i))}>×</button>}
                         </div>
                       </div>
@@ -1164,16 +1605,16 @@ export default function App() {
                       </div>
                       <label className="lbl">Weight</label>
                       <WeightInput onWeightChange={v => updateSetWeight(i, v)} />
-                      <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(168,200,245,.08)", borderRadius: 12, padding: "10px 14px", border: "1.5px solid rgba(168,200,245,.25)" }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#5070b0" }}>× Times (same reps & weight)</span>
+                      <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(0,200,5,.06)", borderRadius: 12, padding: "10px 14px", border: "1.5px solid rgba(0,200,5,.15)" }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#00c805" }}>× Times (same reps & weight)</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <button onClick={() => { const s2 = [...sets]; s2[i].times = Math.max(1, (s2[i].times||1) - 1); setSets(s2); }}
-                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(168,200,245,.4)", background: "rgba(255,255,255,.7)", color: "#3060b0", fontSize: 18, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, color: "#1a1a1a", minWidth: 28, textAlign: "center" }}>{s.times || 1}</span>
+                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(0,200,5,.25)", background: "rgba(26,26,26,.98)", color: "#00c805", fontSize: 18, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, color: "#ffffff", minWidth: 28, textAlign: "center" }}>{s.times || 1}</span>
                           <button onClick={() => { const s2 = [...sets]; s2[i].times = (s2[i].times||1) + 1; setSets(s2); }}
-                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(168,200,245,.4)", background: "rgba(255,255,255,.7)", color: "#3060b0", fontSize: 18, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                            style={{ width: 32, height: 32, borderRadius: "50%", border: "1.5px solid rgba(0,200,5,.25)", background: "rgba(26,26,26,.98)", color: "#00c805", fontSize: 18, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                         </div>
-                        {(s.times||1) > 1 && <span style={{ fontSize: 11, color: "#7090c0" }}>= {s.times} sets</span>}
+                        {(s.times||1) > 1 && <span style={{ fontSize: 11, color: "#888888" }}>= {s.times} sets</span>}
                       </div>
                     </div>
                   ))}
@@ -1184,16 +1625,16 @@ export default function App() {
 
               {workouts.length > 0 && (
                 <div>
-                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#1a1a1a", marginBottom: 14 }}>Recent sessions</p>
+                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#ffffff", marginBottom: 14 }}>Recent sessions</p>
                   {workouts.slice(0, 4).map(w => (
                     <div key={w.id} className="recent-card">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                         <div>
                           <span style={{ fontSize: 14, fontWeight: 600 }}>{w.exercise}</span>
-                          <div style={{ fontSize: 11, color: "#b0b8d8", marginTop: 2 }}>{w.date}</div>
+                          <div style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{w.date}</div>
                         </div>
                         <button onClick={() => setEditingWorkout(w)}
-                          style={{ background: "rgba(168,200,245,.15)", border: "1.5px solid rgba(168,200,245,.4)", borderRadius: 10, padding: "6px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, color: "#3060b0", cursor: "pointer", flexShrink: 0 }}>
+                          style={{ background: "rgba(0,200,5,.1)", border: "1.5px solid rgba(0,200,5,.25)", borderRadius: 10, padding: "6px 14px", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, color: "#00c805", cursor: "pointer", flexShrink: 0 }}>
                           Edit
                         </button>
                       </div>
@@ -1210,21 +1651,21 @@ export default function App() {
           {/* ── PRs ── */}
           {tab === "prs" && (
             <div className="fade">
-              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Personal records</p>
-              <p style={{ fontSize: 13, color: "#a0a8cc", marginBottom: 20 }}>Your heaviest lift ever, per exercise.</p>
-              {prs.length === 0 && <div className="glass" style={{ padding: 28, textAlign: "center" }}><p style={{ color: "#b0b8d8" }}>No records yet — log some workouts!</p></div>}
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Personal records</p>
+              <p style={{ fontSize: 13, color: "#888888", marginBottom: 20 }}>Your heaviest lift ever, per exercise.</p>
+              {prs.length === 0 && <div className="glass" style={{ padding: 28, textAlign: "center" }}><p style={{ color: "#555555" }}>No records yet — log some workouts!</p></div>}
               {Object.entries(prs.reduce((acc, [ex, pr]) => { const cat = findCategory(ex, categories) || "Other"; if (!acc[cat]) acc[cat] = []; acc[cat].push([ex, pr]); return acc; }, {})).map(([cat, items]) => (
                 <div key={cat}>
                   <span className="cat-label">{cat}</span>
                   {items.map(([ex, pr]) => (
                     <div key={ex} className="pr-row">
                       <div>
-                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>{ex}</div>
-                        <div style={{ fontSize: 11, color: "#b0b8d8" }}>Achieved {pr.date}</div>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>{ex}</div>
+                        <div style={{ fontSize: 11, color: "#555555" }}>Achieved {pr.date}</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#1a1a1a", lineHeight: 1 }}>{pr.weight}</div>
-                        <div style={{ fontSize: 12, color: "#b0b8d8", marginTop: 3 }}>lbs × {pr.reps} reps</div>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#ffffff", lineHeight: 1 }}>{pr.weight}</div>
+                        <div style={{ fontSize: 12, color: "#555555", marginTop: 3 }}>lbs × {pr.reps} reps</div>
                       </div>
                     </div>
                   ))}
@@ -1235,116 +1676,16 @@ export default function App() {
 
           {/* ── PROGRESS ── */}
           {tab === "progress" && (
-            <div className="fade">
-              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#1a1a1a", marginBottom: 6 }}>Week-over-week</p>
-              <p style={{ fontSize: 13, color: "#a0a8cc", marginBottom: 16 }}>Select an exercise to see your progress.</p>
-              {Object.keys(loggedByCategory).length === 0 && <div className="glass" style={{ padding: 28, textAlign: "center" }}><p style={{ color: "#b0b8d8" }}>Log workouts to see your progress.</p></div>}
-              {Object.entries(loggedByCategory).map(([cat, exs]) => (
-                <div key={cat} style={{ marginBottom: 16 }}>
-                  <span className="cat-label">{cat}</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {exs.map(ex => <button key={ex} className={`chip ${activeExercise === ex ? "chip-on" : ""}`} onClick={() => setActiveExercise(ex)}>{ex}</button>)}
-                  </div>
-                </div>
-              ))}
-
-              {activeExercise && weekProgress.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#1a1a1a", marginBottom: 16 }}>{activeExercise}</p>
-                  <ProgressIndicator weekProgress={weekProgress} />
-                  {weekProgress.length >= 2 && (() => {
-                    const last = weekProgress[weekProgress.length - 1][1];
-                    const prev = weekProgress[weekProgress.length - 2][1];
-                    return (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-                        {[{ label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#1a1a1a", glow: "rgba(160,185,255,.3)" }, { label: "Total Volume", val: last.totalVol.toLocaleString(), unit: "lbs", diff: last.totalVol - prev.totalVol, color: "#388a5a", glow: "rgba(150,220,180,.3)" }].map(c => (
-                          <div key={c.label} className="stat-box" style={{ boxShadow: `0 8px 28px ${c.glow}` }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: "#b0b8d8", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
-                            <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
-                            <div style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 8 }}>{c.unit}</div>
-                            <div style={{ fontSize: 12, color: c.diff >= 0 ? "#1a1a1a" : "#c05050", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} {c.unit} vs last wk</div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-
-                  <div className="glass" style={{ padding: 20, marginBottom: 18 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 4 }}>Max Weight Per Session (lbs)</p>
-                    <p style={{ fontSize: 11, color: "#b0b8d8", marginBottom: 18 }}>Each bar = one day you logged this exercise</p>
-                    {dailyProgress.length === 0 && <p style={{ color: "#b0b8d8", fontSize: 13 }}>No data yet.</p>}
-                    {dailyProgress.length > 0 && (() => {
-                      const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0","#f0b8a8","#a8f0d0"];
-                      const svgW = 320, svgH = 200;
-                      const pad = { top: 20, right: 16, bottom: 48, left: 52 };
-                      const chartW = svgW - pad.left - pad.right;
-                      const chartH = svgH - pad.top - pad.bottom;
-                      const n = dailyProgress.length;
-                      const barW = Math.min(36, (chartW / Math.max(n,1)) * 0.6);
-                      const gap = chartW / Math.max(n,1);
-                      const yMax = maxDailyWeight * 1.2;
-                      const yTicks = 4;
-                      return (
-                        <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
-                          {Array.from({ length: yTicks + 1 }, (_, ti) => {
-                            const val = Math.round((yMax / yTicks) * ti);
-                            const y = pad.top + chartH - (val / yMax) * chartH;
-                            return (
-                              <g key={ti}>
-                                <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(160,180,230,.2)" strokeWidth="1" strokeDasharray="4,3" />
-                                <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#a0a8cc" fontFamily="Poppins,sans-serif">{val}</text>
-                              </g>
-                            );
-                          })}
-                          <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(160,180,230,.4)" strokeWidth="1.5" />
-                          <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(160,180,230,.4)" strokeWidth="1.5" />
-                          <text x={10} y={pad.top + chartH/2} textAnchor="middle" fontSize="8" fill="#a0a8cc" fontFamily="Poppins,sans-serif" transform={`rotate(-90,10,${pad.top + chartH/2})`}>lbs</text>
-                          {dailyProgress.map(([day, v], i) => {
-                            const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
-                            const x = pad.left + gap * i + gap/2 - barW/2;
-                            const y = pad.top + chartH - barH;
-                            const isLatest = i === n - 1;
-                            const d = new Date(day + "T12:00:00");
-                            const label = `${d.getMonth()+1}/${d.getDate()}`;
-                            return (
-                              <g key={day}>
-                                <rect x={x} y={y} width={barW} height={barH} rx="4"
-                                  fill={isLatest ? "#6090e0" : BAR_COLORS[i % BAR_COLORS.length]}
-                                  opacity={isLatest ? 1 : 0.75} />
-                                <text x={x + barW/2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="8"
-                                  fill={isLatest ? "#1a1a1a" : "#a0a8cc"} fontFamily="Poppins,sans-serif"
-                                  fontWeight={isLatest ? "700" : "400"}>{label}</text>
-                                <text x={x + barW/2} y={y - 5} textAnchor="middle" fontSize="8"
-                                  fill={isLatest ? "#1a1a1a" : "#8090b8"} fontFamily="Poppins,sans-serif"
-                                  fontWeight={isLatest ? "700" : "400"}>{v.maxWeight}</text>
-                              </g>
-                            );
-                          })}
-                        </svg>
-                      );
-                    })()}
-                  </div>
-
-                  <div className="glass" style={{ padding: 20 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#a0a8cc", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Top Sets</p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 50px 88px 60px", gap: "0 8px" }}>
-                      {["Date","Reps","Weight","Vol"].map(h => (
-                        <div key={h} style={{ fontSize: 10, fontWeight: 700, color: "#c0c8e0", letterSpacing: 1, paddingBottom: 10, borderBottom: "1px solid rgba(180,195,235,.2)", textTransform: "uppercase" }}>{h}</div>
-                      ))}
-                      {workouts.filter(w => w.exercise === activeExercise)
-                        .flatMap(w => (Array.isArray(w.sets) ? w.sets : []).map(s => ({ date: w.date, ...s, vol: s.reps * s.weight })))
-                        .sort((a, b) => b.weight - a.weight).slice(0, 8)
-                        .flatMap((s, i) => [
-                          <div key={`d${i}`} style={{ fontSize: 12, color: "#a0a8cc", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.date}</div>,
-                          <div key={`r${i}`} style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.reps}</div>,
-                          <div key={`w${i}`} style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? "#1a1a1a" : "#1a1a1a", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.weight} lbs</div>,
-                          <div key={`v${i}`} style={{ fontSize: 12, color: "#a0a8cc", padding: "10px 0", borderBottom: "1px solid rgba(180,195,235,.12)" }}>{s.vol}</div>
-                        ])}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ProgressTab
+              workouts={workouts}
+              categories={categories}
+              activeExercise={activeExercise}
+              setActiveExercise={setActiveExercise}
+              weekProgress={weekProgress}
+              dailyProgress={dailyProgress}
+              maxVol={maxVol}
+              maxDailyWeight={maxDailyWeight}
+            />
           )}
 
           {/* ── COACH TAB ── */}
