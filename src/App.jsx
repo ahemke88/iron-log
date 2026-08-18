@@ -90,6 +90,11 @@ function findCategory(exerciseName, categories) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function simpleHash(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; return String(h); }
 const ADMIN_PASSWORD = "Infinit3Creature2000";
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
 const getWeekKey = (d) => { const dt = new Date(d), day = dt.getDay(), diff = dt.getDate() - day + (day === 0 ? -6 : 1); return new Date(dt.setDate(diff)).toISOString().split("T")[0]; };
 const todayStr = () => new Date().toISOString().split("T")[0];
 const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -675,7 +680,7 @@ function EditWorkoutModal({ workout, onSave, onDelete, onClose }) {
           <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>Edit Session</p>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#888888", cursor: "pointer" }}>×</button>
         </div>
-        <p style={{ fontSize: 11, color: "#555555", marginBottom: 14 }}>{workout.date}</p>
+        <p style={{ fontSize: 11, color: "#555555", marginBottom: 14 }}>{formatDate(workout.date)}</p>
         <div style={{ marginBottom: 18 }}>
           <label className="lbl">Exercise Name</label>
           <input value={editExercise} onChange={e => setEditExercise(e.target.value)} className="field" placeholder="Exercise name" />
@@ -836,7 +841,7 @@ function PRsTab({ prs, categories }) {
                   <div key={ex} style={{ padding: "14px 18px", borderBottom: i < items.length - 1 ? "1px solid rgba(255,255,255,.05)" : "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600, color: "#ffffff", marginBottom: 3 }}>{ex}</div>
-                      <div style={{ fontSize: 11, color: "#555555" }}>{pr.date}</div>
+                      <div style={{ fontSize: 11, color: "#555555" }}>{formatDate(pr.date)}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#f0b429", lineHeight: 1 }}>{pr.weight}</div>
@@ -858,7 +863,6 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
   const [view, setView] = useState("overview");
   const [expandedSession, setExpandedSession] = useState(null);
 
-  // Group logged exercises by category
   const loggedByCategory = useMemo(() => {
     const grouped = {};
     [...new Set(workouts.map(w => w.exercise))].forEach(ex => {
@@ -872,7 +876,6 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
     return grouped;
   }, [workouts, categories]);
 
-  // Sessions for active exercise
   const sessions = useMemo(() => {
     if (!activeExercise) return [];
     return workouts
@@ -888,77 +891,28 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
   }, [workouts, activeExercise]);
 
   const allTimeMax = useMemo(() => sessions.length ? Math.max(...sessions.map(s => s.maxWeight)) : 0, [sessions]);
-  const totalSessions = sessions.length;
   const lastSession = sessions[0];
 
   return (
     <div className="fade">
       <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Progress</p>
-      <p style={{ fontSize: 13, color: "#888888", marginBottom: 16 }}>Select an exercise to analyze your progress.</p>
+      <p style={{ fontSize: 13, color: "#888888", marginBottom: 16 }}>Select an exercise to see your progress.</p>
 
-      {/* Overall stats */}
-      {workouts.length > 0 && (() => {
-        const totalSess = workouts.length;
-        const totalVolumeAll = workouts.reduce((sum, w) => sum + (Array.isArray(w.sets) ? w.sets : []).reduce((s2, s) => s2 + s.reps * s.weight, 0), 0);
-        const groupCount = {};
-        workouts.forEach(w => {
-          let cat = "Other";
-          for (const [c, exs] of Object.entries(categories)) { if (exs.includes(w.exercise)) { cat = c; break; } }
-          groupCount[cat] = (groupCount[cat] || 0) + 1;
-        });
-        const topGroup = Object.entries(groupCount).sort((a,b) => b[1]-a[1])[0];
-        const allEx = [...new Set(workouts.map(w => w.exercise))];
-        const maxCnt = Math.max(...Object.values(groupCount));
-        return (
-          <div style={{ marginBottom: 24 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>All Time Overview</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-              {[
-                { label: "Total Sessions", val: totalSess, unit: "" },
-                { label: "Exercises Logged", val: allEx.length, unit: "" },
-                { label: "Total Volume", val: totalVolumeAll >= 1000 ? `${(totalVolumeAll/1000).toFixed(1)}k` : totalVolumeAll, unit: "lbs" },
-                { label: "Most Trained", val: topGroup ? topGroup[0] : "--", unit: topGroup ? `${topGroup[1]} sessions` : "", small: true },
-              ].map(c => (
-                <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 8, textTransform: "uppercase" }}>{c.label}</div>
-                  <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 14 : 22, fontWeight: 700, color: "#ffffff", lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
-                  {c.unit && <div style={{ fontSize: 11, color: "#555555" }}>{c.unit}</div>}
-                </div>
-              ))}
-            </div>
-            <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 14 }}>Sessions by Muscle Group</p>
-              {Object.entries(groupCount).sort((a,b) => b[1]-a[1]).map(([cat, cnt]) => (
-                <div key={cat} style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                    <span style={{ fontSize: 12, color: "#aaaaaa" }}>{cat}</span>
-                    <span style={{ fontSize: 12, color: "#555555" }}>{cnt}</span>
-                  </div>
-                  <div style={{ background: "rgba(255,255,255,.06)", borderRadius: 100, height: 6, overflow: "hidden" }}>
-                    <div style={{ width: `${(cnt/maxCnt)*100}%`, height: "100%", background: "#00c805", borderRadius: 100 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>By Exercise</p>
-
-      {/* Exercise selector grouped by category */}
+      {/* Exercise selector */}
       {Object.keys(loggedByCategory).length === 0 && (
-        <div className="glass" style={{ padding: 28, textAlign: "center" }}>
+        <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 18, padding: 28, textAlign: "center" }}>
           <p style={{ color: "#555555" }}>Log workouts to see your progress.</p>
         </div>
       )}
+
       {Object.entries(loggedByCategory).map(([cat, exs]) => (
-        <div key={cat} style={{ marginBottom: 16 }}>
+        <div key={cat} style={{ marginBottom: 14 }}>
           <span className="cat-label">{cat}</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {exs.map(ex => (
-              <button key={ex} className={`chip ${activeExercise === ex ? "chip-on" : ""}`}
-                onClick={() => { setActiveExercise(ex); setView("overview"); setExpandedSession(null); }}>
+              <button key={ex}
+                className={`chip ${activeExercise === ex ? "chip-on" : ""}`}
+                onClick={() => { setActiveExercise(ex === activeExercise ? null : ex); setView("overview"); setExpandedSession(null); }}>
                 {ex}
               </button>
             ))}
@@ -966,14 +920,15 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
         </div>
       ))}
 
-      {/* Detail views */}
+      {/* View switcher + detail — revealed when exercise selected */}
       {activeExercise && sessions.length > 0 && (
-        <div style={{ marginTop: 8 }}>
-          {/* View switcher */}
-          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 30, padding: 4, marginBottom: 20, gap: 2 }}>
+        <div style={{ marginTop: 4 }}>
+          {/* View switcher right below chips */}
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 12 }}>{activeExercise}</p>
+          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 12, padding: 4, marginBottom: 18, gap: 2 }}>
             {[["overview","Overview"],["byweek","By Week"],["bysession","By Session"]].map(([k,l]) => (
               <button key={k} onClick={() => setView(k)}
-                style={{ flex: 1, padding: "9px 4px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, transition: "all .2s", background: view === k ? "rgba(255,255,255,.9)" : "none", color: view === k ? "#ffffff" : "#888888", boxShadow: view === k ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
+                style={{ flex: 1, padding: "9px 4px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, transition: "all .2s", background: view === k ? "rgba(255,255,255,.12)" : "none", color: view === k ? "#ffffff" : "#cccccc" }}>
                 {l}
               </button>
             ))}
@@ -982,19 +937,17 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
           {/* ── OVERVIEW ── */}
           {view === "overview" && (
             <div className="fade">
-              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>{activeExercise}</p>
-
               {/* Quick stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
                 {[
-                  { label: "All Time Best", val: `${allTimeMax}`, unit: "lbs", color: "#f0b429" },
-                  { label: "Total Sessions", val: `${totalSessions}`, unit: "logged", color: "#00c805" },
-                  { label: "Last Session", val: lastSession?.date || "--", unit: "", color: "#ffffff", small: true },
-                  { label: "Last Max Weight", val: `${lastSession?.maxWeight || 0}`, unit: "lbs", color: "#ffffff" },
+                  { label: "Heaviest Weight", val: `${allTimeMax}`, unit: "lbs — your all time best", color: "#f0b429" },
+                  { label: "Times Trained", val: `${sessions.length}`, unit: "sessions logged", color: "#ffffff" },
+                  { label: "Last Trained", val: lastSession ? formatDate(lastSession.date) : "--", unit: "", color: "#ffffff", small: true },
+                  { label: "Last Session Best", val: `${lastSession?.maxWeight || 0}`, unit: "lbs lifted", color: "#00c805" },
                 ].map(c => (
-                  <div key={c.label} className="stat-box">
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 16 : 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
+                  <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 8, textTransform: "uppercase" }}>{c.label}</div>
+                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 14 : 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
                     {c.unit && <div style={{ fontSize: 11, color: "#555555" }}>{c.unit}</div>}
                   </div>
                 ))}
@@ -1005,32 +958,31 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
                 const last = weekProgress[weekProgress.length - 1][1];
                 const prev = weekProgress[weekProgress.length - 2][1];
                 const wtDiff = last.maxWeight - prev.maxWeight;
-                const volDiff = last.totalVol - prev.totalVol;
-                let msg, sub, bg, border, color;
-                if (wtDiff > 0 && volDiff > 0) { msg = "You are progressing."; sub = "Weight and volume are both going up. Keep it up."; bg = "rgba(150,230,170,.15)"; border = "rgba(100,200,130,.3)"; color = "#00c805"; }
-                else if (wtDiff === 0 && volDiff === 0) { msg = "Plateau detected."; sub = `You have been at ${last.maxWeight} lbs for a while. Try adding 5 lbs this session.`; bg = "rgba(255,210,150,.15)"; border = "rgba(255,180,80,.3)"; color = "#a06010"; }
-                else { msg = "Volume is building."; sub = "Good progress on volume. Focus on adding a little weight soon."; bg = "rgba(168,210,255,.15)"; border = "rgba(120,180,255,.3)"; color = "#00c805"; }
+                let msg, sub, color;
+                if (wtDiff > 0) { msg = "You are getting stronger."; sub = `You lifted ${wtDiff} lbs more than last week. Keep going.`; color = "#00c805"; }
+                else if (wtDiff === 0) { msg = "Same weight as last week."; sub = `You have been at ${last.maxWeight} lbs. Try adding 5 lbs this session.`; color = "#f0b429"; }
+                else { msg = "Weight went down this week."; sub = "That is okay. Rest and recovery matter. Come back stronger."; color = "#ff4444"; }
                 return (
-                  <div style={{ borderRadius: 16, padding: "16px 18px", marginBottom: 16, background: bg, border: `1.5px solid ${border}` }}>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color, marginBottom: 4 }}>{msg}</div>
+                  <div style={{ borderRadius: 14, padding: "14px 16px", marginBottom: 14, background: "rgba(18,18,18,.98)", border: `1.5px solid ${color === "#00c805" ? "rgba(0,200,5,.25)" : color === "#f0b429" ? "rgba(240,180,40,.25)" : "rgba(255,68,68,.25)"}` }}>
+                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, color, marginBottom: 4 }}>{msg}</div>
                     <div style={{ fontSize: 13, color: "#888888" }}>{sub}</div>
                   </div>
                 );
               })()}
 
-              {/* Most recent session preview */}
+              {/* Last session sets */}
               {lastSession && (
-                <div className="glass" style={{ padding: 20 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#888888", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Last Session — {lastSession.date}</p>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: 18 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Last session — {formatDate(lastSession.date)}</p>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                     {lastSession.sets.map((s, i) => (
-                      <span key={i} className="spill">{s.reps} × {s.weight} lbs</span>
+                      <span key={i} className="spill">{s.reps} reps x {s.weight} lbs</span>
                     ))}
                   </div>
-                  <div style={{ display: "flex", gap: 16, marginTop: 14 }}>
-                    <span style={{ fontSize: 12, color: "#777777" }}>Max: <strong style={{ color: "#ffffff" }}>{lastSession.maxWeight} lbs</strong></span>
-                    <span style={{ fontSize: 12, color: "#777777" }}>Volume: <strong style={{ color: "#ffffff" }}>{lastSession.totalVol.toLocaleString()} lbs</strong></span>
-                    <span style={{ fontSize: 12, color: "#777777" }}>Sets: <strong style={{ color: "#ffffff" }}>{lastSession.sets.length}</strong></span>
+                  <div style={{ display: "flex", gap: 16 }}>
+                    <span style={{ fontSize: 12, color: "#555555" }}>Heaviest: <strong style={{ color: "#ffffff" }}>{lastSession.maxWeight} lbs</strong></span>
+                    <span style={{ fontSize: 12, color: "#555555" }}>Total reps: <strong style={{ color: "#ffffff" }}>{lastSession.totalReps}</strong></span>
+                    <span style={{ fontSize: 12, color: "#555555" }}>Sets: <strong style={{ color: "#ffffff" }}>{lastSession.sets.length}</strong></span>
                   </div>
                 </div>
               )}
@@ -1040,57 +992,51 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
           {/* ── BY WEEK ── */}
           {view === "byweek" && (
             <div className="fade">
-              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>{activeExercise} — Weekly</p>
-
               {weekProgress.length < 2 && <p style={{ color: "#555555", fontSize: 14 }}>Log at least 2 weeks to see weekly trends.</p>}
-
               {weekProgress.length >= 2 && (() => {
                 const last = weekProgress[weekProgress.length - 1][1];
                 const prev = weekProgress[weekProgress.length - 2][1];
                 return (
                   <>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
                       {[
-                        { label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#f0b429", glow: "rgba(240,180,40,.2)" },
-                        { label: "Total Volume", val: last.totalVol.toLocaleString(), unit: "lbs", diff: last.totalVol - prev.totalVol, color: "#00c805", glow: "rgba(0,200,5,.2)" }
+                        { label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#f0b429" },
+                        { label: "Total Reps", val: `${weekProgress[weekProgress.length-1][1].totalVol > 0 ? sessions.filter(s => s.date >= weekProgress[weekProgress.length-1][0]).reduce((sum, s) => sum + s.totalReps, 0) : 0}`, unit: "reps this week", diff: 0, color: "#ffffff" }
                       ].map(c => (
-                        <div key={c.label} className="stat-box" style={{ boxShadow: `0 8px 28px ${c.glow}` }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 10, textTransform: "uppercase" }}>{c.label}</div>
+                        <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 8, textTransform: "uppercase" }}>{c.label}</div>
                           <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
-                          <div style={{ fontSize: 11, color: "#555555", marginBottom: 8 }}>{c.unit}</div>
-                          <div style={{ fontSize: 12, color: c.diff >= 0 ? "#00c805" : "#ff4444", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} {c.unit} vs last wk</div>
+                          <div style={{ fontSize: 11, color: "#555555", marginBottom: c.diff !== 0 ? 6 : 0 }}>{c.unit}</div>
+                          {c.diff !== 0 && <div style={{ fontSize: 12, color: c.diff >= 0 ? "#00c805" : "#ff4444", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} lbs vs last wk</div>}
                         </div>
                       ))}
                     </div>
-
-                    <div className="glass" style={{ padding: 20 }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "#888888", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 18 }}>Max Weight Per Session (lbs)</p>
+                    <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: 18 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Heaviest weight per session</p>
                       {dailyProgress.length > 0 && (() => {
-                        const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0","#f0b8a8","#a8f0d0"];
-                        const svgW = 320, svgH = 200;
-                        const pad = { top: 20, right: 16, bottom: 48, left: 52 };
+                        const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0"];
+                        const svgW = 320, svgH = 180;
+                        const pad = { top: 20, right: 16, bottom: 44, left: 48 };
                         const chartW = svgW - pad.left - pad.right;
                         const chartH = svgH - pad.top - pad.bottom;
                         const n = dailyProgress.length;
-                        const barW = Math.min(36, (chartW / Math.max(n,1)) * 0.6);
+                        const barW = Math.min(34, (chartW / Math.max(n,1)) * 0.6);
                         const gap = chartW / Math.max(n,1);
                         const yMax = maxDailyWeight * 1.2;
-                        const yTicks = 4;
                         return (
                           <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
-                            {Array.from({ length: yTicks + 1 }, (_, ti) => {
-                              const val = Math.round((yMax / yTicks) * ti);
+                            {Array.from({ length: 4 }, (_, ti) => {
+                              const val = Math.round((yMax / 4) * (ti + 1));
                               const y = pad.top + chartH - (val / yMax) * chartH;
                               return (
                                 <g key={ti}>
-                                  <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(255,255,255,.08)" strokeWidth="1" strokeDasharray="4,3" />
-                                  <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#888888" fontFamily="Poppins,sans-serif">{val}</text>
+                                  <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(255,255,255,.06)" strokeWidth="1" strokeDasharray="3,3" />
+                                  <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#555555" fontFamily="Poppins,sans-serif">{val}</text>
                                 </g>
                               );
                             })}
-                            <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(255,255,255,.15)" strokeWidth="1.5" />
-                            <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(255,255,255,.15)" strokeWidth="1.5" />
-                            <text x={10} y={pad.top + chartH/2} textAnchor="middle" fontSize="8" fill="#888888" fontFamily="Poppins,sans-serif" transform={`rotate(-90,10,${pad.top + chartH/2})`}>lbs</text>
+                            <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(255,255,255,.1)" strokeWidth="1.5" />
+                            <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(255,255,255,.1)" strokeWidth="1.5" />
                             {dailyProgress.map(([day, v], i) => {
                               const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
                               const x = pad.left + gap * i + gap/2 - barW/2;
@@ -1100,9 +1046,9 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
                               const label = `${d.getMonth()+1}/${d.getDate()}`;
                               return (
                                 <g key={day}>
-                                  <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#00c805" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.75} />
-                                  <text x={x + barW/2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="8" fill={isLatest ? "#ffffff" : "#888888"} fontFamily="Poppins,sans-serif" fontWeight={isLatest ? "700" : "400"}>{label}</text>
-                                  <text x={x + barW/2} y={y - 5} textAnchor="middle" fontSize="8" fill={isLatest ? "#ffffff" : "#888888"} fontFamily="Poppins,sans-serif" fontWeight={isLatest ? "700" : "400"}>{v.maxWeight}</text>
+                                  <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#00c805" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.6} />
+                                  <text x={x + barW/2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="8" fill={isLatest ? "#00c805" : "#555555"} fontFamily="Poppins,sans-serif" fontWeight={isLatest ? "700" : "400"}>{label}</text>
+                                  <text x={x + barW/2} y={y - 4} textAnchor="middle" fontSize="8" fill={isLatest ? "#00c805" : "#666666"} fontFamily="Poppins,sans-serif">{v.maxWeight}</text>
                                 </g>
                               );
                             })}
@@ -1119,44 +1065,34 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
           {/* ── BY SESSION ── */}
           {view === "bysession" && (
             <div className="fade">
-              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>{activeExercise} — All Sessions</p>
-              <p style={{ fontSize: 13, color: "#888888", marginBottom: 16 }}>Tap any session to see full details.</p>
-
-              {sessions.length === 0 && <p style={{ color: "#555555" }}>No sessions logged yet.</p>}
-
+              <p style={{ fontSize: 13, color: "#888888", marginBottom: 14 }}>Tap any session to see full details.</p>
               {sessions.map((s, i) => (
-                <div key={s.id || i} style={{ marginBottom: 10 }}>
+                <div key={s.id || i} style={{ marginBottom: 8 }}>
                   <button onClick={() => setExpandedSession(expandedSession === i ? null : i)}
-                    style={{ width: "100%", background: expandedSession === i ? "rgba(24,24,24,.95)" : "rgba(22,22,22,.95)", border: `1.5px solid ${expandedSession === i ? "rgba(168,200,245,.5)" : "rgba(255,255,255,.07)"}`, borderRadius: expandedSession === i ? "16px 16px 0 0" : 16, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", transition: "all .2s" }}>
+                    style={{ width: "100%", background: expandedSession === i ? "rgba(0,200,5,.06)" : "rgba(18,18,18,.98)", border: `1.5px solid ${expandedSession === i ? "rgba(0,200,5,.2)" : "rgba(255,255,255,.07)"}`, borderRadius: expandedSession === i ? "14px 14px 0 0" : 14, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                     <div style={{ textAlign: "left" }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{s.date}</div>
-                      <div style={{ fontSize: 12, color: "#777777" }}>{s.sets.length} sets · Max {s.maxWeight} lbs · Vol {s.totalVol.toLocaleString()} lbs</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{formatDate(s.date)}</div>
+                      <div style={{ fontSize: 12, color: "#555555" }}>{s.sets.length} sets · Heaviest: {s.maxWeight} lbs · Total reps: {s.totalReps}</div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      {i === 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", background: "rgba(0,200,5,.12)", padding: "3px 10px", borderRadius: 20 }}>Latest</span>}
-                      <span style={{ color: "#888888", fontSize: 16 }}>{expandedSession === i ? "▲" : "▼"}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {i === 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", background: "rgba(0,200,5,.1)", padding: "3px 10px", borderRadius: 20 }}>Latest</span>}
+                      <span style={{ color: "#555555" }}>{expandedSession === i ? "▲" : "▼"}</span>
                     </div>
                   </button>
-
                   {expandedSession === i && (
-                    <div style={{ background: "rgba(24,24,24,.98)", borderRadius: "0 0 16px 16px", border: "1.5px solid rgba(168,200,245,.5)", borderTop: "none", padding: "16px 18px" }}>
-                      {/* Sets table */}
-                      <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr", gap: "0 8px", marginBottom: 14 }}>
-                        {["Set","Reps","Weight","Volume"].map(h => (
-                          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,.06)", textTransform: "uppercase" }}>{h}</div>
+                    <div style={{ background: "rgba(14,14,14,.98)", border: "1.5px solid rgba(0,200,5,.15)", borderTop: "none", borderRadius: "0 0 14px 14px", padding: "14px 16px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 1fr 1fr", gap: "0 8px", marginBottom: 12 }}>
+                        {["Set","Reps","Weight","Total"].map(h => (
+                          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,.05)", textTransform: "uppercase" }}>{h}</div>
                         ))}
                         {s.sets.map((set, si) => [
-                          <div key={`n${si}`} style={{ fontSize: 13, fontWeight: 700, color: "#00c805", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)" }}>{si + 1}</div>,
-                          <div key={`r${si}`} style={{ fontSize: 13, color: "#ffffff", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)", fontWeight: 600 }}>{set.reps}</div>,
-                          <div key={`w${si}`} style={{ fontSize: 13, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)", fontWeight: set.weight === s.maxWeight ? 700 : 600 }}>{set.weight} lbs</div>,
-                          <div key={`v${si}`} style={{ fontSize: 12, color: "#777777", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.05)" }}>{set.reps * set.weight}</div>
+                          <div key={`n${si}`} style={{ fontSize: 13, fontWeight: 700, color: "#00c805", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)" }}>{si + 1}</div>,
+                          <div key={`r${si}`} style={{ fontSize: 13, color: "#ffffff", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)", fontWeight: 600 }}>{set.reps}</div>,
+                          <div key={`w${si}`} style={{ fontSize: 13, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)", fontWeight: set.weight === s.maxWeight ? 700 : 600 }}>{set.weight} lbs</div>,
+                          <div key={`v${si}`} style={{ fontSize: 12, color: "#555555", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)" }}>{set.reps * set.weight}</div>
                         ])}
                       </div>
-                      {/* Session totals */}
-                      <div style={{ display: "flex", gap: 20, paddingTop: 8 }}>
-                        <span style={{ fontSize: 12, color: "#777777" }}>Total reps: <strong style={{ color: "#ffffff" }}>{s.totalReps}</strong></span>
-                        <span style={{ fontSize: 12, color: "#777777" }}>Total volume: <strong style={{ color: "#ffffff" }}>{s.totalVol.toLocaleString()} lbs</strong></span>
-                      </div>
+                      <div style={{ fontSize: 11, color: "#555555" }}>Total: {s.totalReps} reps across {s.sets.length} sets</div>
                     </div>
                   )}
                 </div>
@@ -1165,234 +1101,143 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
           )}
         </div>
       )}
+
+      {/* All Time Overview — moved to bottom, simplified */}
+      {workouts.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>Your Overall Stats</p>
+          {(() => {
+            const totalSessions = workouts.length;
+            const totalRepsAll = workouts.reduce((sum, w) => sum + (Array.isArray(w.sets) ? w.sets : []).reduce((s2, s) => s2 + s.reps, 0), 0);
+            const groupCount = {};
+            workouts.forEach(w => {
+              let cat = "Other";
+              for (const [c, exs] of Object.entries(categories)) { if (exs.includes(w.exercise)) { cat = c; break; } }
+              groupCount[cat] = (groupCount[cat] || 0) + 1;
+            });
+            const topGroup = Object.entries(groupCount).sort((a,b) => b[1]-a[1])[0];
+            const allEx = [...new Set(workouts.map(w => w.exercise))];
+            const maxCnt = Math.max(...Object.values(groupCount));
+            return (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  {[
+                    { label: "Times Trained", val: totalSessions, sub: "total sessions logged" },
+                    { label: "Moves Tracked", val: allEx.length, sub: "different exercises" },
+                    { label: "Total Reps", val: totalRepsAll.toLocaleString(), sub: "reps logged all time" },
+                    { label: "Most Trained", val: topGroup ? topGroup[0] : "--", sub: topGroup ? `${topGroup[1]} sessions` : "", small: true },
+                  ].map(c => (
+                    <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 14, padding: "14px 12px" }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
+                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 13 : 20, fontWeight: 700, color: "#ffffff", lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
+                      <div style={{ fontSize: 10, color: "#555555" }}>{c.sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 14, padding: "14px 16px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 12 }}>How Often You Train Each Muscle</p>
+                  {Object.entries(groupCount).sort((a,b) => b[1]-a[1]).map(([cat, cnt]) => (
+                    <div key={cat} style={{ marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                        <span style={{ fontSize: 12, color: "#aaaaaa" }}>{cat}</span>
+                        <span style={{ fontSize: 12, color: "#555555" }}>{cnt} session{cnt !== 1 ? "s" : ""}</span>
+                      </div>
+                      <div style={{ background: "rgba(255,255,255,.05)", borderRadius: 100, height: 5, overflow: "hidden" }}>
+                        <div style={{ width: `${(cnt/maxCnt)*100}%`, height: "100%", background: "#00c805", borderRadius: 100 }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
 
 
-// ─── Cardio Categories ────────────────────────────────────────────────────────
-const CARDIO_CATEGORIES = {
-  "Machines": ["Treadmill","Stair Climber","Elliptical","Rowing Machine","Stationary Bike","Air Bike","Ski Erg","Jacob's Ladder"],
-  "HIIT": ["Circuit Training","Tabata","Jump Rope","Battle Ropes","Box Jumps","Burpees","Sprint Intervals","Sled Push","Sled Pull","Kettlebell Swings"],
-  "Outdoor": ["Running","Walking","Cycling","Swimming","Hiking","Rowing","Trail Run","Sprints"],
-  "Classes and Other": ["Yoga","Pilates","Boxing","Kickboxing","CrossFit","Dance","Spin Class","Martial Arts"]
-};
-
-// ─── Cardio Logger ────────────────────────────────────────────────────────────
-function CardioLogger({ user, date, onSave, customCardio, setCustomCardio }) {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedActivity, setSelectedActivity] = useState("");
-  const [customActivity, setCustomActivity] = useState("");
-  const [customCategory, setCustomCategory] = useState("Machines");
-  const [durationMins, setDurationMins] = useState("30");
-  const [durationManual, setDurationManual] = useState("");
-  const [useManualDuration, setUseManualDuration] = useState(false);
-  const [distance, setDistance] = useState("");
-  const [distanceUnit, setDistanceUnit] = useState("miles");
-  const [intensity, setIntensity] = useState(null);
-  const [errors, setErrors] = useState({});
+// ─── Edit Cardio Modal ────────────────────────────────────────────────────────
+function EditCardioModal({ session, onSave, onDelete, onClose }) {
+  const [activity, setActivity] = useState(session.activity);
+  const [duration, setDuration] = useState(String(session.duration_mins));
+  const [distance, setDistance] = useState(String(session.distance || ""));
+  const [distanceUnit, setDistanceUnit] = useState(session.distance_unit || "miles");
+  const [intensity, setIntensity] = useState(session.intensity || null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const containerRef = useRef(null);
-  const lastY = useRef(null);
-  const accum = useRef(null);
-
-  // Build full category list including custom
-  const allCategories = useMemo(() => {
-    const merged = {};
-    Object.entries(CARDIO_CATEGORIES).forEach(([cat, acts]) => { merged[cat] = [...acts]; });
-    customCardio.forEach(({ name, category }) => {
-      if (!merged[category]) merged[category] = [];
-      if (!merged[category].includes(name)) merged[category].push(name);
-    });
-    return merged;
-  }, [customCardio]);
-
-  const currentActivities = selectedCategory ? (allCategories[selectedCategory] || []) : [];
-
-  // Drum scroll for duration
-  const snapDuration = (v) => Math.max(1, Math.min(300, Math.round(v)));
-  const changeDuration = (delta) => setDurationMins(String(snapDuration(Number(durationMins) + delta)));
-
-  const handleWheel = useCallback((e) => { e.preventDefault(); changeDuration(e.deltaY > 0 ? -1 : 1); }, [durationMins]);
-  const handleTouchStart = (e) => { lastY.current = e.touches[0].clientY; accum.current = 0; };
-  const handleTouchMove = useCallback((e) => {
-    e.preventDefault();
-    const dy = lastY.current - e.touches[0].clientY;
-    accum.current += dy; lastY.current = e.touches[0].clientY;
-    if (Math.abs(accum.current) >= 30) { changeDuration(accum.current > 0 ? 1 : -1); accum.current = 0; }
-  }, [durationMins]);
-
-  useEffect(() => {
-    const el = containerRef.current; if (!el) return;
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    el.addEventListener("touchmove", handleTouchMove, { passive: false });
-    return () => { el.removeEventListener("wheel", handleWheel); el.removeEventListener("touchmove", handleTouchMove); };
-  }, [handleWheel, handleTouchMove]);
-
-  const validate = () => {
-    const errs = {};
-    const activityName = customActivity.trim() || selectedActivity;
-    if (!activityName) errs.activity = "please select or enter a cardio activity";
-    const dur = useManualDuration ? Number(durationManual) : Number(durationMins);
-    if (!dur || dur <= 0) errs.duration = "please enter duration";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
 
   const handleSave = async () => {
-    if (!validate()) return;
+    if (!duration || Number(duration) <= 0) return;
     setSaving(true);
-    const activityName = customActivity.trim() || selectedActivity;
-    const dur = useManualDuration ? Number(durationManual) : Number(durationMins);
     try {
-      // Save custom cardio activity if new
-      if (customActivity.trim()) {
-        const exists = customCardio.find(c => c.name.toLowerCase() === customActivity.trim().toLowerCase());
-        if (!exists) {
-          const newCustom = await supabase.from("custom_cardio").insert({ username: user.username, name: customActivity.trim(), category: customCategory }).select();
-          if (newCustom.data) setCustomCardio(prev => [...prev, newCustom.data[0]]);
-        }
-      }
-      // Save cardio session
-      await supabase.from("cardio_sessions").insert({
-        username: user.username, date, activity: activityName,
-        category: selectedCategory || customCategory,
-        duration_mins: dur,
-        distance: distance ? Number(distance) : null,
-        distance_unit: distance ? distanceUnit : null,
-        intensity: intensity || null
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2200);
-      setSelectedActivity(""); setCustomActivity(""); setDistance(""); setIntensity(null);
+      const updates = { activity: activity.trim(), duration_mins: Number(duration), distance: distance ? Number(distance) : null, distance_unit: distance ? distanceUnit : null, intensity: intensity || null };
+      const { error } = await supabase.from("cardio_sessions").update(updates).eq("id", session.id);
+      if (error) throw new Error(error.message);
+      onSave({ ...session, ...updates });
     } catch (e) { alert("Error saving. Please try again."); }
     setSaving(false);
   };
 
-  const numVal = Number(durationMins);
-  const rows = [
-    { val: Math.max(1, numVal - 2), size: 15, opacity: 0.18, fw: 300 },
-    { val: Math.max(1, numVal - 1), size: 22, opacity: 0.35, fw: 400 },
-    { val: numVal,                   size: 36, opacity: 1,    fw: 700, selected: true },
-    { val: Math.min(300, numVal + 1), size: 22, opacity: 0.35, fw: 400 },
-    { val: Math.min(300, numVal + 2), size: 15, opacity: 0.18, fw: 300 },
-  ];
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this cardio session?")) return;
+    try {
+      await supabase.from("cardio_sessions").delete().eq("id", session.id);
+      onDelete(session.id);
+    } catch (e) { alert("Error deleting."); }
+  };
 
   return (
-    <div>
-      {/* Step 1 — Category */}
-      <div style={{ marginBottom: 20 }}>
-        <label className="lbl">Category</label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {Object.keys(CARDIO_CATEGORIES).map(cat => (
-            <button key={cat} onClick={() => { setSelectedCategory(cat); setSelectedActivity(""); }}
-              style={{ padding: "14px 10px", borderRadius: 14, border: `1.5px solid ${selectedCategory === cat ? "rgba(0,200,5,.4)" : "rgba(255,255,255,.1)"}`, background: selectedCategory === cat ? "rgba(0,200,5,.1)" : "rgba(18,18,18,.98)", color: selectedCategory === cat ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .2s", textAlign: "center" }}>
-              {cat}
-            </button>
-          ))}
+    <div className="overlay">
+      <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 22, width: "100%", maxWidth: 420, padding: 26 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>Edit Cardio</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#555555", cursor: "pointer" }}>x</button>
         </div>
-        {errors.activity && !selectedActivity && !customActivity && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.activity}</p>}
-      </div>
+        <p style={{ fontSize: 11, color: "#555555", marginBottom: 18 }}>{formatDate(session.date)}</p>
 
-      {/* Step 2 — Subcategory chips */}
-      {selectedCategory && (
+        <div style={{ marginBottom: 14 }}>
+          <label className="lbl">Activity</label>
+          <input value={activity} onChange={e => setActivity(e.target.value)} className="field" />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label className="lbl">Duration (minutes)</label>
+          <input type="number" value={duration} onChange={e => setDuration(e.target.value)} className="field" style={{ textAlign: "center", fontSize: 20, fontWeight: 700 }} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label className="lbl">Distance <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <input type="number" value={distance} onChange={e => setDistance(e.target.value)} className="field" placeholder="0.0" style={{ flex: 1 }} />
+            <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 12, padding: 4, gap: 2 }}>
+              {["miles","km"].map(u => (
+                <button key={u} onClick={() => setDistanceUnit(u)}
+                  style={{ padding: "8px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: distanceUnit === u ? "rgba(255,255,255,.1)" : "none", color: distanceUnit === u ? "#ffffff" : "#666666" }}>
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
         <div style={{ marginBottom: 20 }}>
-          <label className="lbl">{selectedCategory}</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {currentActivities.map(act => (
-              <button key={act} onClick={() => { setSelectedActivity(act); setCustomActivity(""); }}
-                className={`chip ${selectedActivity === act ? "chip-on" : ""}`}>
-                {act}
+          <label className="lbl">Intensity <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
+              <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
+                style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.1)"}`, background: intensity === lvl ? bg : "rgba(18,18,18,.98)", color: intensity === lvl ? color : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                {lvl}
               </button>
             ))}
           </div>
         </div>
-      )}
-
-      {/* Custom activity */}
-      <div style={{ marginBottom: 20 }}>
-        <label className="lbl">Or enter a custom activity</label>
-        <input className="field" value={customActivity} onChange={e => { setCustomActivity(e.target.value); setSelectedActivity(""); }}
-          placeholder="e.g. Paddle boarding" style={{ marginBottom: customActivity.trim() ? 10 : 0 }} />
-        {customActivity.trim() && (
-          <div>
-            <label className="lbl" style={{ marginTop: 8 }}>Save under category</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {Object.keys(CARDIO_CATEGORIES).map(cat => (
-                <button key={cat} onClick={() => setCustomCategory(cat)}
-                  className={`chip ${customCategory === cat ? "chip-on" : ""}`}>{cat}</button>
-              ))}
-            </div>
-            <p style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>Saved to your {customCategory} list permanently.</p>
-          </div>
-        )}
+        <button onClick={handleSave} disabled={saving}
+          style={{ background: "#00c805", border: "none", borderRadius: 12, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", marginBottom: 10 }}>
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        <button onClick={handleDelete}
+          style={{ background: "rgba(255,68,68,.08)", border: "1.5px solid rgba(255,68,68,.25)", borderRadius: 12, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#ff4444", width: "100%" }}>
+          Delete Session
+        </button>
       </div>
-
-      {/* Duration */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <label className="lbl" style={{ marginBottom: 0 }}>Duration (minutes) <span style={{ color: "#ff4444" }}>*</span></label>
-          <button onClick={() => setUseManualDuration(!useManualDuration)}
-            style={{ background: "none", border: "none", color: "#00c805", fontSize: 12, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}>
-            {useManualDuration ? "Use scroll" : "Type manually"}
-          </button>
-        </div>
-
-        {!useManualDuration ? (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={() => { accum.current = 0; }}
-              style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 16, width: 160, userSelect: "none", touchAction: "none", cursor: "ns-resize", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 50, background: "linear-gradient(to bottom,rgba(18,18,18,.98),transparent)", zIndex: 2, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 50, background: "linear-gradient(to top,rgba(18,18,18,.98),transparent)", zIndex: 2, pointerEvents: "none" }} />
-              {rows.map((r, i) => (
-                <div key={i} onClick={() => { if (i < 2) changeDuration(2 - i); else if (i > 2) changeDuration(-(i - 2)); }}
-                  style={{ height: r.selected ? 58 : i === 1 || i === 3 ? 42 : 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: r.selected ? "default" : "pointer" }}>
-                  <span style={{ fontSize: r.size, color: `rgba(255,255,255,${r.opacity})`, fontWeight: r.fw, fontFamily: "'Poppins',sans-serif" }}>{r.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <input type="number" className="field" value={durationManual} onChange={e => setDurationManual(e.target.value)}
-            placeholder="e.g. 45" style={{ textAlign: "center", fontSize: 22, fontWeight: 700 }} />
-        )}
-        {errors.duration && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.duration}</p>}
-      </div>
-
-      {/* Distance (optional) */}
-      <div style={{ marginBottom: 20 }}>
-        <label className="lbl">Distance <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-        <div style={{ display: "flex", gap: 10 }}>
-          <input type="number" className="field" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" style={{ flex: 1 }} />
-          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 12, padding: 4, gap: 2 }}>
-            {["miles","km"].map(u => (
-              <button key={u} onClick={() => setDistanceUnit(u)}
-                style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: distanceUnit === u ? "rgba(255,255,255,.1)" : "none", color: distanceUnit === u ? "#ffffff" : "#666666" }}>
-                {u}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Intensity (optional) */}
-      <div style={{ marginBottom: 24 }}>
-        <label className="lbl">Intensity <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-        <div style={{ display: "flex", gap: 10 }}>
-          {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
-            <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
-              style={{ flex: 1, padding: "12px 8px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.1)"}`, background: intensity === lvl ? bg : "rgba(18,18,18,.98)", color: intensity === lvl ? color : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .2s" }}>
-              {lvl}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={handleSave} disabled={saving}
-        style={{ background: "#00c805", border: "none", borderRadius: 14, padding: 14, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", boxShadow: "0 6px 22px rgba(0,200,5,.25)", opacity: saving ? .7 : 1 }}>
-        {saving ? "Saving..." : saved ? "Saved!" : "Save Cardio Session"}
-      </button>
     </div>
   );
 }
@@ -1662,6 +1507,7 @@ export default function App() {
   const [setErrors, setSetErrors] = useState({});
   const [logMode, setLogMode] = useState("workout"); // "workout" or "cardio"
   const [editingWorkout, setEditingWorkout] = useState(null);
+  const [editingCardio, setEditingCardio] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [customCardio, setCustomCardio] = useState([]);
   const [cardioSessions, setCardioSessions] = useState([]);
@@ -1738,7 +1584,7 @@ export default function App() {
     setSavingWorkout(false);
   };
 
-  const updateSetReps = (i, val) => { const s = [...sets]; s[i].reps = val; setSets(s); };
+  const updateSetReps = (i, field, val) => { const s = [...sets]; s[i].reps = val; setSets(s); };
   const updateSetWeight = (i, val) => { const s = [...sets]; s[i].weight = val; setSets(s); };
 
   const handleLogoTap = () => {
@@ -1820,6 +1666,14 @@ export default function App() {
       <style>{STYLES}</style><VIEWPORT_FIX /><BG />
       {showAdminLogin && <AdminLoginModal onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }} onClose={() => setShowAdminLogin(false)} />}
       {showAdmin && <AdminView onClose={() => setShowAdmin(false)} />}
+      {editingCardio && (
+        <EditCardioModal
+          session={editingCardio}
+          onSave={(updated) => { setCardioSessions(prev => prev.map(c => c.id === updated.id ? updated : c)); setEditingCardio(null); }}
+          onDelete={(id) => { setCardioSessions(prev => prev.filter(c => c.id !== id)); setEditingCardio(null); }}
+          onClose={() => setEditingCardio(null)}
+        />
+      )}
       {showSettings && (
         <AccountSettingsModal
           user={user}
@@ -1920,6 +1774,21 @@ export default function App() {
 
                 <div style={{ marginBottom: 22 }}>
                   <label className="lbl">Sets</label>
+                  {/* Quick fill recommendations */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                    {[
+                      { label: "Endurance", reps: "15", desc: "High reps, lighter weight" },
+                      { label: "Build Muscle", reps: "10", desc: "Moderate reps and weight" },
+                      { label: "Strength", reps: "5", desc: "Low reps, heavy weight" },
+                    ].map(rec => (
+                      <button key={rec.label} onClick={() => setSets(sets.map(s => ({ ...s, reps: rec.reps })))}
+                        title={rec.desc}
+                        style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: "1.5px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", color: "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 10, fontWeight: 600, cursor: "pointer", textAlign: "center", lineHeight: 1.4 }}>
+                        <div style={{ color: "#00c805", fontSize: 11, marginBottom: 2 }}>{rec.label}</div>
+                        <div style={{ color: "#555555", fontSize: 9 }}>{rec.desc}</div>
+                      </button>
+                    ))}
+                  </div>
                   {sets.map((s, i) => (
                     <div key={s.id} style={{ marginBottom: 24, background: "rgba(18,18,18,.9)", borderRadius: 20, padding: 18, border: "1.5px solid rgba(255,255,255,.07)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -1935,12 +1804,10 @@ export default function App() {
                         </div>
                       </div>
                       <div style={{ marginBottom: 16 }}>
-                        <label className="lbl">Reps — swipe up/down</label>
-                        <div style={{ display: "flex", justifyContent: "center" }}>
-                          <div className="drum-wrap" style={{ width: 160 }}>
-                            <DrumPicker value={s.reps} onChange={v => updateSetReps(i, v)} min={1} max={100} step={1} label="Reps" />
-                          </div>
-                        </div>
+                        <label className="lbl">Reps</label>
+                        <input type="number" value={s.reps} onChange={e => updateSetReps(i, "reps", e.target.value)}
+                          placeholder="e.g. 10" inputMode="numeric"
+                          style={{ background: "rgba(28,28,28,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 12, color: "#ffffff", padding: "14px 16px", width: "100%", fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, outline: "none", textAlign: "center" }} />
                       </div>
                       <label className="lbl">Weight</label>
                       <WeightInput onWeightChange={v => updateSetWeight(i, v)} />
@@ -1987,14 +1854,20 @@ export default function App() {
               {cardioSessions.length > 0 && logMode === "cardio" && (
                 <div>
                   <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#ffffff", marginBottom: 14 }}>Recent cardio</p>
-                  {cardioSessions.slice(0, 4).map((c, i) => (
-                    <div key={i} style={{ background: "rgba(18,18,18,.98)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, border: "1.5px solid rgba(255,255,255,.07)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{c.activity}</span>
-                        <span style={{ fontSize: 11, color: "#555555" }}>{c.date}</span>
+                  {cardioSessions.slice(0, 5).map((c, i) => (
+                    <div key={c.id || i} style={{ background: "rgba(18,18,18,.98)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, border: "1.5px solid rgba(255,255,255,.07)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <div>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff", display: "block", marginBottom: 2 }}>{c.activity}</span>
+                          <span style={{ fontSize: 11, color: "#555555" }}>{formatDate(c.date)} · {c.category}</span>
+                        </div>
+                        <button onClick={() => setEditingCardio(c)}
+                          style={{ background: "rgba(0,200,5,.08)", border: "1.5px solid rgba(0,200,5,.2)", borderRadius: 10, padding: "5px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, color: "#00c805", cursor: "pointer" }}>
+                          Edit
+                        </button>
                       </div>
-                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, color: "#00c805", background: "rgba(0,200,5,.1)", padding: "3px 10px", borderRadius: 20, fontWeight: 500 }}>{c.duration_mins} min</span>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12, color: "#00c805", background: "rgba(0,200,5,.08)", padding: "3px 10px", borderRadius: 20, fontWeight: 500 }}>{c.duration_mins} min</span>
                         {c.distance && <span style={{ fontSize: 12, color: "#888888", background: "rgba(255,255,255,.05)", padding: "3px 10px", borderRadius: 20 }}>{c.distance} {c.distance_unit}</span>}
                         {c.intensity && <span style={{ fontSize: 12, color: c.intensity === "Easy" ? "#00c805" : c.intensity === "Moderate" ? "#f0b429" : "#ff4444", background: "rgba(255,255,255,.05)", padding: "3px 10px", borderRadius: 20 }}>{c.intensity}</span>}
                       </div>
@@ -2002,6 +1875,7 @@ export default function App() {
                   ))}
                 </div>
               )}
+
             </div>
           )}
 
