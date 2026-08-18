@@ -413,7 +413,7 @@ function SearchableExerciseSelect({ categories, value, onChange }) {
 function WeightInput({ onWeightChange }) {
   const [mode, setMode] = useState("barbell");
   const [manualVal, setManualVal] = useState("");
-  const MODES = [{ key: "barbell", label: "Plate Loaded" }, { key: "dumbbell", label: "Dumbbell" }, { key: "pulley", label: "Pulley" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
+  const MODES = [{ key: "barbell", label: "Barbell" }, { key: "dumbbell", label: "Dumbbell" }, { key: "machine", label: "Machine / Cable" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
   return (
     <div style={{ background: "rgba(20,20,20,.95)", borderRadius: 18, border: "1.5px solid rgba(255,255,255,.07)", padding: 18 }}>
       <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(255,255,255,.05)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
@@ -426,7 +426,7 @@ function WeightInput({ onWeightChange }) {
       </div>
       {mode === "barbell"    && <PlateCalculator onWeightChange={onWeightChange} />}
       {mode === "dumbbell"   && <DumbbellPicker  onWeightChange={onWeightChange} />}
-      {mode === "pulley" && <PulleyPicker onWeightChange={onWeightChange} />}
+      {mode === "machine" && <PulleyPicker onWeightChange={onWeightChange} />}
       {mode === "bodyweight" && (
         <div style={{ background: "rgba(0,200,5,.06)", borderRadius: 14, padding: "20px 18px", textAlign: "center", border: "1.5px solid rgba(0,200,5,.2)" }}>
           <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Bodyweight</div>
@@ -470,7 +470,7 @@ const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Poppins:wght@300;400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   .glass{background:rgba(18,18,18,.98);backdrop-filter:blur(18px);border:1.5px solid rgba(255,255,255,.07);border-radius:22px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-  .tab-pill{background:none;border:none;cursor:pointer;padding:10px 16px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;border-radius:30px;transition:all .22s;color:#666666}
+  .tab-pill{background:none;border:none;cursor:pointer;padding:10px 16px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;border-radius:30px;transition:all .22s;color:#bbbbbb}
   .tab-on{background:rgba(255,255,255,.1);color:#ffffff;box-shadow:0 4px 16px rgba(0,0,0,.3)}
   .field{background:rgba(28,28,28,.98);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#ffffff;padding:11px 15px;width:100%;font-family:'Poppins',sans-serif;font-size:14px;outline:none}
   select.field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a0a8d0' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-color:rgba(28,28,28,.98);padding-right:34px}
@@ -479,7 +479,7 @@ const STYLES = `
   .add-set-btn{background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.15);border-radius:12px;padding:10px;font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;color:#888888;width:100%;font-weight:500}
   .pr-row{background:rgba(22,22,22,.98);border:1.5px solid rgba(255,255,255,.07);border-radius:18px;padding:18px 20px;margin-bottom:11px;display:flex;justify-content:space-between;align-items:center;transition:transform .2s}
   .pr-row:hover{transform:translateY(-2px)}
-  .chip{padding:7px 15px;font-size:12px;font-weight:500;cursor:pointer;border-radius:30px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#888888;transition:all .18s;font-family:'Poppins',sans-serif}
+  .chip{padding:7px 15px;font-size:12px;font-weight:500;cursor:pointer;border-radius:30px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#cccccc;transition:all .18s;font-family:'Poppins',sans-serif}
   .chip-on{background:rgba(0,200,5,.12);color:#00c805;border-color:rgba(0,200,5,.4);box-shadow:0 4px 14px rgba(0,200,5,.15)}
   .stat-box{background:rgba(22,22,22,.98);backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.07);border-radius:18px;padding:20px 18px}
   .rm-btn{background:rgba(255,68,68,.08);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;color:#ff4444;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -777,6 +777,81 @@ function LoginScreen({ onLogin }) {
 }
 
 
+
+
+// ─── PRs Tab ──────────────────────────────────────────────────────────────────
+function PRsTab({ prs, categories }) {
+  const [expandedCat, setExpandedCat] = useState(null);
+
+  const findCategory = (exerciseName) => {
+    for (const [cat, exercises] of Object.entries(categories)) {
+      if (exercises.includes(exerciseName)) return cat;
+    }
+    return "Other";
+  };
+
+  const grouped = useMemo(() => {
+    const map = {};
+    prs.forEach(([ex, pr]) => {
+      const cat = findCategory(ex);
+      if (!map[cat]) map[cat] = [];
+      map[cat].push([ex, pr]);
+    });
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [prs, categories]);
+
+  return (
+    <div className="fade">
+      <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Personal Records</p>
+      <p style={{ fontSize: 13, color: "#888888", marginBottom: 20 }}>Your heaviest lift ever. Tap a category to expand.</p>
+
+      {prs.length === 0 && (
+        <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 18, padding: 28, textAlign: "center" }}>
+          <p style={{ color: "#555555" }}>No records yet. Log some workouts.</p>
+        </div>
+      )}
+
+      {grouped.map(([cat, items]) => {
+        const isOpen = expandedCat === cat;
+        const catBest = items.reduce((best, [, pr]) => pr.weight > best ? pr.weight : best, 0);
+        return (
+          <div key={cat} style={{ marginBottom: 10 }}>
+            {/* Category header */}
+            <button
+              onClick={() => setExpandedCat(isOpen ? null : cat)}
+              style={{ width: "100%", background: isOpen ? "rgba(0,200,5,.08)" : "rgba(18,18,18,.98)", border: `1.5px solid ${isOpen ? "rgba(0,200,5,.25)" : "rgba(255,255,255,.07)"}`, borderRadius: isOpen ? "16px 16px 0 0" : 16, padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", transition: "all .2s" }}>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{cat}</div>
+                <div style={{ fontSize: 12, color: "#666666" }}>{items.length} exercise{items.length !== 1 ? "s" : ""} · Best: {catBest} lbs</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, color: "#555555" }}>{isOpen ? "▲" : "▼"}</span>
+              </div>
+            </button>
+
+            {/* Expanded items */}
+            {isOpen && (
+              <div style={{ background: "rgba(14,14,14,.98)", border: "1.5px solid rgba(0,200,5,.15)", borderTop: "none", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
+                {items.map(([ex, pr], i) => (
+                  <div key={ex} style={{ padding: "14px 18px", borderBottom: i < items.length - 1 ? "1px solid rgba(255,255,255,.05)" : "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#ffffff", marginBottom: 3 }}>{ex}</div>
+                      <div style={{ fontSize: 11, color: "#555555" }}>{pr.date}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#f0b429", lineHeight: 1 }}>{pr.weight}</div>
+                      <div style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>lbs x {pr.reps} reps</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ─── Progress Tab ─────────────────────────────────────────────────────────────
 function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, weekProgress, dailyProgress, maxVol, maxDailyWeight }) {
@@ -1094,6 +1169,234 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
   );
 }
 
+
+// ─── Cardio Categories ────────────────────────────────────────────────────────
+const CARDIO_CATEGORIES = {
+  "Machines": ["Treadmill","Stair Climber","Elliptical","Rowing Machine","Stationary Bike","Air Bike","Ski Erg","Jacob's Ladder"],
+  "HIIT": ["Circuit Training","Tabata","Jump Rope","Battle Ropes","Box Jumps","Burpees","Sprint Intervals","Sled Push","Sled Pull","Kettlebell Swings"],
+  "Outdoor": ["Running","Walking","Cycling","Swimming","Hiking","Rowing","Trail Run","Sprints"],
+  "Classes and Other": ["Yoga","Pilates","Boxing","Kickboxing","CrossFit","Dance","Spin Class","Martial Arts"]
+};
+
+// ─── Cardio Logger ────────────────────────────────────────────────────────────
+function CardioLogger({ user, date, onSave, customCardio, setCustomCardio }) {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState("");
+  const [customActivity, setCustomActivity] = useState("");
+  const [customCategory, setCustomCategory] = useState("Machines");
+  const [durationMins, setDurationMins] = useState("30");
+  const [durationManual, setDurationManual] = useState("");
+  const [useManualDuration, setUseManualDuration] = useState(false);
+  const [distance, setDistance] = useState("");
+  const [distanceUnit, setDistanceUnit] = useState("miles");
+  const [intensity, setIntensity] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const containerRef = useRef(null);
+  const lastY = useRef(null);
+  const accum = useRef(null);
+
+  // Build full category list including custom
+  const allCategories = useMemo(() => {
+    const merged = {};
+    Object.entries(CARDIO_CATEGORIES).forEach(([cat, acts]) => { merged[cat] = [...acts]; });
+    customCardio.forEach(({ name, category }) => {
+      if (!merged[category]) merged[category] = [];
+      if (!merged[category].includes(name)) merged[category].push(name);
+    });
+    return merged;
+  }, [customCardio]);
+
+  const currentActivities = selectedCategory ? (allCategories[selectedCategory] || []) : [];
+
+  // Drum scroll for duration
+  const snapDuration = (v) => Math.max(1, Math.min(300, Math.round(v)));
+  const changeDuration = (delta) => setDurationMins(String(snapDuration(Number(durationMins) + delta)));
+
+  const handleWheel = useCallback((e) => { e.preventDefault(); changeDuration(e.deltaY > 0 ? -1 : 1); }, [durationMins]);
+  const handleTouchStart = (e) => { lastY.current = e.touches[0].clientY; accum.current = 0; };
+  const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
+    const dy = lastY.current - e.touches[0].clientY;
+    accum.current += dy; lastY.current = e.touches[0].clientY;
+    if (Math.abs(accum.current) >= 30) { changeDuration(accum.current > 0 ? 1 : -1); accum.current = 0; }
+  }, [durationMins]);
+
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => { el.removeEventListener("wheel", handleWheel); el.removeEventListener("touchmove", handleTouchMove); };
+  }, [handleWheel, handleTouchMove]);
+
+  const validate = () => {
+    const errs = {};
+    const activityName = customActivity.trim() || selectedActivity;
+    if (!activityName) errs.activity = "please select or enter a cardio activity";
+    const dur = useManualDuration ? Number(durationManual) : Number(durationMins);
+    if (!dur || dur <= 0) errs.duration = "please enter duration";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
+    setSaving(true);
+    const activityName = customActivity.trim() || selectedActivity;
+    const dur = useManualDuration ? Number(durationManual) : Number(durationMins);
+    try {
+      // Save custom cardio activity if new
+      if (customActivity.trim()) {
+        const exists = customCardio.find(c => c.name.toLowerCase() === customActivity.trim().toLowerCase());
+        if (!exists) {
+          const newCustom = await supabase.from("custom_cardio").insert({ username: user.username, name: customActivity.trim(), category: customCategory }).select();
+          if (newCustom.data) setCustomCardio(prev => [...prev, newCustom.data[0]]);
+        }
+      }
+      // Save cardio session
+      await supabase.from("cardio_sessions").insert({
+        username: user.username, date, activity: activityName,
+        category: selectedCategory || customCategory,
+        duration_mins: dur,
+        distance: distance ? Number(distance) : null,
+        distance_unit: distance ? distanceUnit : null,
+        intensity: intensity || null
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+      setSelectedActivity(""); setCustomActivity(""); setDistance(""); setIntensity(null);
+    } catch (e) { alert("Error saving. Please try again."); }
+    setSaving(false);
+  };
+
+  const numVal = Number(durationMins);
+  const rows = [
+    { val: Math.max(1, numVal - 2), size: 15, opacity: 0.18, fw: 300 },
+    { val: Math.max(1, numVal - 1), size: 22, opacity: 0.35, fw: 400 },
+    { val: numVal,                   size: 36, opacity: 1,    fw: 700, selected: true },
+    { val: Math.min(300, numVal + 1), size: 22, opacity: 0.35, fw: 400 },
+    { val: Math.min(300, numVal + 2), size: 15, opacity: 0.18, fw: 300 },
+  ];
+
+  return (
+    <div>
+      {/* Step 1 — Category */}
+      <div style={{ marginBottom: 20 }}>
+        <label className="lbl">Category</label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {Object.keys(CARDIO_CATEGORIES).map(cat => (
+            <button key={cat} onClick={() => { setSelectedCategory(cat); setSelectedActivity(""); }}
+              style={{ padding: "14px 10px", borderRadius: 14, border: `1.5px solid ${selectedCategory === cat ? "rgba(0,200,5,.4)" : "rgba(255,255,255,.1)"}`, background: selectedCategory === cat ? "rgba(0,200,5,.1)" : "rgba(18,18,18,.98)", color: selectedCategory === cat ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .2s", textAlign: "center" }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+        {errors.activity && !selectedActivity && !customActivity && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.activity}</p>}
+      </div>
+
+      {/* Step 2 — Subcategory chips */}
+      {selectedCategory && (
+        <div style={{ marginBottom: 20 }}>
+          <label className="lbl">{selectedCategory}</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {currentActivities.map(act => (
+              <button key={act} onClick={() => { setSelectedActivity(act); setCustomActivity(""); }}
+                className={`chip ${selectedActivity === act ? "chip-on" : ""}`}>
+                {act}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Custom activity */}
+      <div style={{ marginBottom: 20 }}>
+        <label className="lbl">Or enter a custom activity</label>
+        <input className="field" value={customActivity} onChange={e => { setCustomActivity(e.target.value); setSelectedActivity(""); }}
+          placeholder="e.g. Paddle boarding" style={{ marginBottom: customActivity.trim() ? 10 : 0 }} />
+        {customActivity.trim() && (
+          <div>
+            <label className="lbl" style={{ marginTop: 8 }}>Save under category</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {Object.keys(CARDIO_CATEGORIES).map(cat => (
+                <button key={cat} onClick={() => setCustomCategory(cat)}
+                  className={`chip ${customCategory === cat ? "chip-on" : ""}`}>{cat}</button>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>Saved to your {customCategory} list permanently.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Duration */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <label className="lbl" style={{ marginBottom: 0 }}>Duration (minutes) <span style={{ color: "#ff4444" }}>*</span></label>
+          <button onClick={() => setUseManualDuration(!useManualDuration)}
+            style={{ background: "none", border: "none", color: "#00c805", fontSize: 12, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}>
+            {useManualDuration ? "Use scroll" : "Type manually"}
+          </button>
+        </div>
+
+        {!useManualDuration ? (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={() => { accum.current = 0; }}
+              style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 16, width: 160, userSelect: "none", touchAction: "none", cursor: "ns-resize", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 50, background: "linear-gradient(to bottom,rgba(18,18,18,.98),transparent)", zIndex: 2, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 50, background: "linear-gradient(to top,rgba(18,18,18,.98),transparent)", zIndex: 2, pointerEvents: "none" }} />
+              {rows.map((r, i) => (
+                <div key={i} onClick={() => { if (i < 2) changeDuration(2 - i); else if (i > 2) changeDuration(-(i - 2)); }}
+                  style={{ height: r.selected ? 58 : i === 1 || i === 3 ? 42 : 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: r.selected ? "default" : "pointer" }}>
+                  <span style={{ fontSize: r.size, color: `rgba(255,255,255,${r.opacity})`, fontWeight: r.fw, fontFamily: "'Poppins',sans-serif" }}>{r.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <input type="number" className="field" value={durationManual} onChange={e => setDurationManual(e.target.value)}
+            placeholder="e.g. 45" style={{ textAlign: "center", fontSize: 22, fontWeight: 700 }} />
+        )}
+        {errors.duration && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.duration}</p>}
+      </div>
+
+      {/* Distance (optional) */}
+      <div style={{ marginBottom: 20 }}>
+        <label className="lbl">Distance <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input type="number" className="field" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" style={{ flex: 1 }} />
+          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 12, padding: 4, gap: 2 }}>
+            {["miles","km"].map(u => (
+              <button key={u} onClick={() => setDistanceUnit(u)}
+                style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: distanceUnit === u ? "rgba(255,255,255,.1)" : "none", color: distanceUnit === u ? "#ffffff" : "#666666" }}>
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Intensity (optional) */}
+      <div style={{ marginBottom: 24 }}>
+        <label className="lbl">Intensity <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: "flex", gap: 10 }}>
+          {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
+            <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
+              style={{ flex: 1, padding: "12px 8px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.1)"}`, background: intensity === lvl ? bg : "rgba(18,18,18,.98)", color: intensity === lvl ? color : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .2s" }}>
+              {lvl}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={saving}
+        style={{ background: "#00c805", border: "none", borderRadius: 14, padding: 14, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", boxShadow: "0 6px 22px rgba(0,200,5,.25)", opacity: saving ? .7 : 1 }}>
+        {saving ? "Saving..." : saved ? "Saved!" : "Save Cardio Session"}
+      </button>
+    </div>
+  );
+}
+
 // ─── About Tab ────────────────────────────────────────────────────────────────
 function AboutTab() {
   return (
@@ -1356,8 +1659,12 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false); const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [savingWorkout, setSavingWorkout] = useState(false);
+  const [setErrors, setSetErrors] = useState({});
+  const [logMode, setLogMode] = useState("workout"); // "workout" or "cardio"
   const [editingWorkout, setEditingWorkout] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [customCardio, setCustomCardio] = useState([]);
+  const [cardioSessions, setCardioSessions] = useState([]);
   const adminTaps = useRef(0); const adminTimer = useRef(null);
 
   const categories = useMemo(() => buildCategories(customExercises), [customExercises]);
@@ -1379,12 +1686,16 @@ export default function App() {
 
   const loadUserData = async (userData) => {
     try {
-      const [workoutData, customData] = await Promise.all([
+      const [workoutData, customData, customCardioData, cardioData] = await Promise.all([
         sb.getWorkouts(userData.username),
-        sb.getCustomExercises(userData.username)
+        sb.getCustomExercises(userData.username),
+        supabase.from("custom_cardio").select("*").eq("username", userData.username).then(r => r.data || []),
+        supabase.from("cardio_sessions").select("*").eq("username", userData.username).order("date", { ascending: false }).then(r => r.data || [])
       ]);
       setWorkouts(workoutData || []);
       setCustomExercises(customData || []);
+      setCustomCardio(customCardioData || []);
+      setCardioSessions(cardioData || []);
       setUser(userData);
     } catch {}
   };
@@ -1396,6 +1707,13 @@ export default function App() {
 
   const saveWorkout = async () => {
     const name = customEx.trim() || selectedExercise;
+    // Validate sets
+    const errors = {};
+    sets.forEach((s, i) => {
+      if (!s.reps || Number(s.reps) === 0) errors[i] = "enter reps before saving";
+    });
+    if (Object.keys(errors).length > 0) { setSetErrors(errors); return; }
+    setSetErrors({});
     const validSets = sets.filter(s => s.weight >= 0);
     if (!validSets.length) return;
     setSavingWorkout(true);
@@ -1555,7 +1873,27 @@ export default function App() {
           {/* ── LOG ── */}
           {tab === "log" && (
             <div className="fade">
-              <div className="glass" style={{ padding: 24, marginBottom: 20 }}>
+              {/* Workout / Cardio toggle */}
+              <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 16, padding: 4, marginBottom: 16, gap: 4 }}>
+                {[["workout","Workout"],["cardio","Cardio"]].map(([k,l]) => (
+                  <button key={k} onClick={() => setLogMode(k)}
+                    style={{ flex: 1, padding: "12px 0", borderRadius: 13, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, transition: "all .2s", background: logMode === k ? (k === "cardio" ? "#00c805" : "rgba(255,255,255,.1)") : "none", color: logMode === k ? (k === "cardio" ? "#000000" : "#ffffff") : "#888888" }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              {/* Cardio logger */}
+              {logMode === "cardio" && (
+                <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 22, padding: 24, marginBottom: 20 }}>
+                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff", marginBottom: 20 }}>Log Cardio</p>
+                  <CardioLogger user={user} date={date} customCardio={customCardio} setCustomCardio={setCustomCardio}
+                    onSave={(session) => setCardioSessions(prev => [session, ...prev])} />
+                </div>
+              )}
+
+              {/* Workout logger */}
+              {logMode === "workout" && <div className="glass" style={{ padding: 24, marginBottom: 20 }}>
                 <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 22 }}>New session</p>
                 <div style={{ marginBottom: 16 }}><label className="lbl">Date</label><input type="date" className="field" value={date} onChange={e => setDate(e.target.value)} style={{ width: "auto" }} /></div>
                 <div style={{ marginBottom: 20 }}>
@@ -1589,6 +1927,7 @@ export default function App() {
                           <span style={{ fontSize: 13, fontWeight: 700, color: "#00c805" }}>SET {i + 1}</span>
                           {s.type === "drop" && <span style={{ fontSize: 10, fontWeight: 700, color: "#ff4444", background: "rgba(240,150,150,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>DROP</span>}
                           {s.type === "super" && <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", background: "rgba(100,180,255,.15)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5 }}>SUPER</span>}
+                          {setErrors[i] && <span style={{ fontSize: 11, color: "#ff4444", fontWeight: 500 }}>* {setErrors[i]}</span>}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {s.weight > 0 && <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>{s.weight} lbs</span>}
@@ -1621,9 +1960,9 @@ export default function App() {
                   <button className="add-set-btn" onClick={() => setSets([...sets, { id: Date.now(), reps: sets[sets.length-1].reps, weight: sets[sets.length-1].weight, times: 1 }])}>+ Add Set</button>
                 </div>
                 <button className="save-btn" onClick={saveWorkout} disabled={savingWorkout}>{savingWorkout ? "Saving..." : saved ? "✓ Saved!" : "Save Workout"}</button>
-              </div>
+              </div>}
 
-              {workouts.length > 0 && (
+              {workouts.length > 0 && logMode === "workout" && (
                 <div>
                   <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#ffffff", marginBottom: 14 }}>Recent sessions</p>
                   {workouts.slice(0, 4).map(w => (
@@ -1645,36 +1984,32 @@ export default function App() {
                   ))}
                 </div>
               )}
+              {cardioSessions.length > 0 && logMode === "cardio" && (
+                <div>
+                  <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 19, fontWeight: 700, color: "#ffffff", marginBottom: 14 }}>Recent cardio</p>
+                  {cardioSessions.slice(0, 4).map((c, i) => (
+                    <div key={i} style={{ background: "rgba(18,18,18,.98)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, border: "1.5px solid rgba(255,255,255,.07)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{c.activity}</span>
+                        <span style={{ fontSize: 11, color: "#555555" }}>{c.date}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12, color: "#00c805", background: "rgba(0,200,5,.1)", padding: "3px 10px", borderRadius: 20, fontWeight: 500 }}>{c.duration_mins} min</span>
+                        {c.distance && <span style={{ fontSize: 12, color: "#888888", background: "rgba(255,255,255,.05)", padding: "3px 10px", borderRadius: 20 }}>{c.distance} {c.distance_unit}</span>}
+                        {c.intensity && <span style={{ fontSize: 12, color: c.intensity === "Easy" ? "#00c805" : c.intensity === "Moderate" ? "#f0b429" : "#ff4444", background: "rgba(255,255,255,.05)", padding: "3px 10px", borderRadius: 20 }}>{c.intensity}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* ── PRs ── */}
           {tab === "prs" && (
-            <div className="fade">
-              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Personal records</p>
-              <p style={{ fontSize: 13, color: "#888888", marginBottom: 20 }}>Your heaviest lift ever, per exercise.</p>
-              {prs.length === 0 && <div className="glass" style={{ padding: 28, textAlign: "center" }}><p style={{ color: "#555555" }}>No records yet — log some workouts!</p></div>}
-              {Object.entries(prs.reduce((acc, [ex, pr]) => { const cat = findCategory(ex, categories) || "Other"; if (!acc[cat]) acc[cat] = []; acc[cat].push([ex, pr]); return acc; }, {})).map(([cat, items]) => (
-                <div key={cat}>
-                  <span className="cat-label">{cat}</span>
-                  {items.map(([ex, pr]) => (
-                    <div key={ex} className="pr-row">
-                      <div>
-                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>{ex}</div>
-                        <div style={{ fontSize: 11, color: "#555555" }}>Achieved {pr.date}</div>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 30, fontWeight: 700, color: "#ffffff", lineHeight: 1 }}>{pr.weight}</div>
-                        <div style={{ fontSize: 12, color: "#555555", marginTop: 3 }}>lbs × {pr.reps} reps</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+            <PRsTab prs={prs} categories={categories} />
           )}
 
-          {/* ── PROGRESS ── */}
           {tab === "progress" && (
             <ProgressTab
               workouts={workouts}
