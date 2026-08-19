@@ -421,10 +421,10 @@ function WeightInput({ onWeightChange }) {
   const MODES = [{ key: "barbell", label: "Barbell" }, { key: "dumbbell", label: "Dumbbell" }, { key: "machine", label: "Machine / Cable" }, { key: "bodyweight", label: "Bodyweight" }, { key: "manual", label: "Manual" }];
   return (
     <div style={{ background: "rgba(20,20,20,.95)", borderRadius: 18, border: "1.5px solid rgba(255,255,255,.07)", padding: 18 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(255,255,255,.05)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 2 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", background: "rgba(10,10,10,.9)", borderRadius: 16, padding: 4, marginBottom: 20, gap: 4 }}>
         {MODES.map(m => (
           <button key={m.key} onClick={() => { setMode(m.key); if (m.key === "bodyweight") onWeightChange(0); }}
-            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(255,255,255,.9)" : "none", color: mode === m.key ? "#ffffff" : "#888888", boxShadow: mode === m.key ? "0 4px 14px rgba(155,175,235,.2)" : "none" }}>
+            style={{ flex: 1, minWidth: "45%", padding: "8px 4px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: mode === m.key ? "rgba(0,200,5,.12)" : "rgba(25,25,25,.98)", color: mode === m.key ? "#00c805" : "#aaaaaa", border: `1.5px solid ${mode === m.key ? "#00c805" : "rgba(255,255,255,.08)"}` }}>
             {m.label}
           </button>
         ))}
@@ -1157,6 +1157,172 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
   );
 }
 
+
+
+// ─── Cardio Categories ────────────────────────────────────────────────────────
+const CARDIO_CATEGORIES = {
+  "Machines": ["Treadmill","Stair Climber","Elliptical","Rowing Machine","Stationary Bike","Air Bike","Ski Erg","Jacob's Ladder"],
+  "HIIT": ["Circuit Training","Tabata","Jump Rope","Battle Ropes","Box Jumps","Burpees","Sprint Intervals","Sled Push","Sled Pull","Kettlebell Swings"],
+  "Outdoor": ["Running","Walking","Cycling","Swimming","Hiking","Trail Run","Sprints"],
+  "Classes and Other": ["Yoga","Pilates","Boxing","Kickboxing","CrossFit","Dance","Spin Class","Martial Arts"]
+};
+
+// ─── Cardio Logger ────────────────────────────────────────────────────────────
+function CardioLogger({ user, date, onSave, customCardio, setCustomCardio }) {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState("");
+  const [customActivity, setCustomActivity] = useState("");
+  const [customCategory, setCustomCategory] = useState("Machines");
+  const [durationMins, setDurationMins] = useState("30");
+  const [distance, setDistance] = useState("");
+  const [distanceUnit, setDistanceUnit] = useState("miles");
+  const [intensity, setIntensity] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const allCategories = useMemo(() => {
+    const merged = {};
+    Object.entries(CARDIO_CATEGORIES).forEach(([cat, acts]) => { merged[cat] = [...acts]; });
+    (customCardio || []).forEach(({ name, category }) => {
+      if (!merged[category]) merged[category] = [];
+      if (!merged[category].includes(name)) merged[category].push(name);
+    });
+    return merged;
+  }, [customCardio]);
+
+  const currentActivities = selectedCategory ? (allCategories[selectedCategory] || []) : [];
+
+  const validate = () => {
+    const errs = {};
+    const activityName = customActivity.trim() || selectedActivity;
+    if (!activityName) errs.activity = "please select or enter a cardio activity";
+    const dur = Number(durationMins);
+    if (!dur || dur <= 0) errs.duration = "please enter duration";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
+    setSaving(true);
+    const activityName = customActivity.trim() || selectedActivity;
+    const dur = Number(durationMins);
+    try {
+      if (customActivity.trim()) {
+        const exists = (customCardio || []).find(c => c.name.toLowerCase() === customActivity.trim().toLowerCase());
+        if (!exists) {
+          const { data } = await supabase.from("custom_cardio").insert({ username: user.username, name: customActivity.trim(), category: customCategory }).select();
+          if (data) setCustomCardio(prev => [...prev, data[0]]);
+        }
+      }
+      const { data } = await supabase.from("cardio_sessions").insert({
+        username: user.username, date, activity: activityName,
+        category: selectedCategory || customCategory,
+        duration_mins: dur,
+        distance: distance ? Number(distance) : null,
+        distance_unit: distance ? distanceUnit : null,
+        intensity: intensity || null
+      }).select();
+      if (data && data[0]) onSave(data[0]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+      setSelectedActivity(""); setCustomActivity(""); setDistance(""); setIntensity(null); setDurationMins("30");
+    } catch (e) { alert("Error saving. Please try again."); }
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <label className="lbl">Category</label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {Object.keys(CARDIO_CATEGORIES).map(cat => (
+            <button key={cat} onClick={() => { setSelectedCategory(cat); setSelectedActivity(""); }}
+              style={{ padding: "14px 10px", borderRadius: 14, border: `1.5px solid ${selectedCategory === cat ? "#00c805" : "rgba(255,255,255,.08)"}`, background: selectedCategory === cat ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: selectedCategory === cat ? "#00c805" : "#aaaaaa", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+        {errors.activity && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.activity}</p>}
+      </div>
+
+      {selectedCategory && (
+        <div style={{ marginBottom: 20 }}>
+          <label className="lbl">{selectedCategory}</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {currentActivities.map(act => (
+              <button key={act} onClick={() => { setSelectedActivity(act); setCustomActivity(""); }}
+                style={{ padding: "8px 14px", borderRadius: 20, border: `1.5px solid ${selectedActivity === act ? "#00c805" : "rgba(255,255,255,.1)"}`, background: selectedActivity === act ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: selectedActivity === act ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+                {act}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginBottom: 20 }}>
+        <label className="lbl">Or enter a custom activity</label>
+        <input className="field" value={customActivity} onChange={e => { setCustomActivity(e.target.value); setSelectedActivity(""); }} placeholder="e.g. Paddle boarding" style={{ marginBottom: customActivity.trim() ? 10 : 0 }} />
+        {customActivity.trim() && (
+          <div style={{ marginTop: 10 }}>
+            <label className="lbl">Save under category</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {Object.keys(CARDIO_CATEGORIES).map(cat => (
+                <button key={cat} onClick={() => setCustomCategory(cat)}
+                  style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${customCategory === cat ? "#00c805" : "rgba(255,255,255,.1)"}`, background: customCategory === cat ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: customCategory === cat ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>Saved to your {customCategory} list permanently.</p>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <label className="lbl" style={{ marginBottom: 0 }}>Duration (minutes) <span style={{ color: "#ff4444" }}>*</span></label>
+        </div>
+        <input type="number" className="field" value={durationMins} onChange={e => setDurationMins(e.target.value)}
+          placeholder="e.g. 45" inputMode="numeric" style={{ textAlign: "center", fontSize: 22, fontWeight: 700 }} />
+        {errors.duration && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.duration}</p>}
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label className="lbl">Distance <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input type="number" className="field" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" style={{ flex: 1 }} />
+          <div style={{ display: "flex", background: "rgba(10,10,10,.9)", borderRadius: 12, padding: 4, gap: 2 }}>
+            {["miles","km"].map(u => (
+              <button key={u} onClick={() => setDistanceUnit(u)}
+                style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: distanceUnit === u ? "rgba(255,255,255,.1)" : "none", color: distanceUnit === u ? "#ffffff" : "#666666" }}>
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <label className="lbl">Intensity <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: "flex", gap: 10 }}>
+          {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
+            <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
+              style={{ flex: 1, padding: "12px 8px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.08)"}`, background: intensity === lvl ? bg : "rgba(22,22,22,.98)", color: intensity === lvl ? color : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              {lvl}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={saving}
+        style={{ background: "#00c805", border: "none", borderRadius: 14, padding: 14, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", opacity: saving ? .7 : 1 }}>
+        {saving ? "Saving..." : saved ? "Saved!" : "Save Cardio Session"}
+      </button>
+    </div>
+  );
+}
 
 // ─── Edit Cardio Modal ────────────────────────────────────────────────────────
 function EditCardioModal({ session, onSave, onDelete, onClose }) {
