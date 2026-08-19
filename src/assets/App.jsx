@@ -238,7 +238,7 @@ function DumbbellPicker({ onWeightChange }) {
         <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 30, padding: 4, width: "fit-content" }}>
           {[false,true].map(val => (
             <button key={String(val)} onClick={() => setCombined(val)}
-              style={{ padding: "8px 16px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: combined === val ? "rgba(255,255,255,.9)" : "none", color: combined === val ? "#ffffff" : "#888888" }}>
+              style={{ padding: "8px 16px", borderRadius: 26, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: combined === val ? "rgba(255,255,255,.1)" : "rgba(28,28,28,.98)", color: "#ffffff" }}>
               {val ? "Combined Total" : "Single DB"}
             </button>
           ))}
@@ -500,6 +500,7 @@ const STYLES = `
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
   .fade{animation:fu .3s ease}
   @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
   html,body{width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;background:#0d0d0d}
   *{-webkit-tap-highlight-color:transparent}
@@ -859,22 +860,43 @@ function PRsTab({ prs, categories }) {
 }
 
 // ─── Progress Tab ─────────────────────────────────────────────────────────────
+const BODY_AREAS = {
+  "Upper Body": ["Chest","Back","Shoulders","Biceps","Triceps"],
+  "Lower Body": ["Legs","Glutes"],
+  "Core":       ["Core"],
+  "Other":      ["Other"]
+};
+
 function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, weekProgress, dailyProgress, maxVol, maxDailyWeight }) {
+  const [selectedArea, setSelectedArea] = useState(null);
   const [view, setView] = useState("overview");
   const [expandedSession, setExpandedSession] = useState(null);
 
-  const loggedByCategory = useMemo(() => {
-    const grouped = {};
-    [...new Set(workouts.map(w => w.exercise))].forEach(ex => {
-      let foundCat = "Other";
-      for (const [cat, exs] of Object.entries(categories)) {
-        if (exs.includes(ex)) { foundCat = cat; break; }
+  // Map each exercise to a body area
+  const getBodyArea = (exerciseName) => {
+    for (const [cat, exercises] of Object.entries(categories)) {
+      if (exercises.includes(exerciseName)) {
+        for (const [area, cats] of Object.entries(BODY_AREAS)) {
+          if (cats.includes(cat)) return area;
+        }
+        return "Other";
       }
-      if (!grouped[foundCat]) grouped[foundCat] = [];
-      grouped[foundCat].push(ex);
+    }
+    return "Other";
+  };
+
+  // Logged exercises grouped by body area
+  const loggedByArea = useMemo(() => {
+    const map = {};
+    [...new Set(workouts.map(w => w.exercise))].forEach(ex => {
+      const area = getBodyArea(ex);
+      if (!map[area]) map[area] = [];
+      map[area].push(ex);
     });
-    return grouped;
+    return map;
   }, [workouts, categories]);
+
+  const areaExercises = selectedArea ? (loggedByArea[selectedArea] || []) : [];
 
   const sessions = useMemo(() => {
     if (!activeExercise) return [];
@@ -884,7 +906,6 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
         ...w,
         sets: Array.isArray(w.sets) ? w.sets : [],
         maxWeight: Math.max(...(Array.isArray(w.sets) ? w.sets : []).map(s => s.weight || 0), 0),
-        totalVol: (Array.isArray(w.sets) ? w.sets : []).reduce((sum, s) => sum + (s.reps * s.weight), 0),
         totalReps: (Array.isArray(w.sets) ? w.sets : []).reduce((sum, s) => sum + s.reps, 0),
       }))
       .sort((a, b) => b.date.localeCompare(a.date));
@@ -893,256 +914,271 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
   const allTimeMax = useMemo(() => sessions.length ? Math.max(...sessions.map(s => s.maxWeight)) : 0, [sessions]);
   const lastSession = sessions[0];
 
+  const handleAreaTap = (area) => {
+    if (selectedArea === area) { setSelectedArea(null); setActiveExercise(null); }
+    else { setSelectedArea(area); setActiveExercise(null); }
+    setView("overview"); setExpandedSession(null);
+  };
+
+  const handleExerciseTap = (ex) => {
+    if (activeExercise === ex) { setActiveExercise(null); }
+    else { setActiveExercise(ex); setView("overview"); setExpandedSession(null); }
+  };
+
   return (
     <div className="fade">
-      <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>Progress</p>
-      <p style={{ fontSize: 13, color: "#888888", marginBottom: 16 }}>Select an exercise to see your progress.</p>
+      <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>Progress</p>
+      <p style={{ fontSize: 13, color: "#888888", marginBottom: 20 }}>Select a body area, then an exercise.</p>
 
-      {/* Exercise selector */}
-      {Object.keys(loggedByCategory).length === 0 && (
+      {workouts.length === 0 && (
         <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 18, padding: 28, textAlign: "center" }}>
           <p style={{ color: "#555555" }}>Log workouts to see your progress.</p>
         </div>
       )}
 
-      {Object.entries(loggedByCategory).map(([cat, exs]) => (
-        <div key={cat} style={{ marginBottom: 14 }}>
-          <span className="cat-label">{cat}</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {exs.map(ex => (
-              <button key={ex}
-                className={`chip ${activeExercise === ex ? "chip-on" : ""}`}
-                onClick={() => { setActiveExercise(ex === activeExercise ? null : ex); setView("overview"); setExpandedSession(null); }}>
-                {ex}
+      {/* Level 1 — Body area grid */}
+      {workouts.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
+          {Object.keys(BODY_AREAS).map(area => {
+            const count = (loggedByArea[area] || []).length;
+            const isActive = selectedArea === area;
+            return (
+              <button key={area} onClick={() => handleAreaTap(area)} disabled={count === 0}
+                style={{ padding: "16px 14px", borderRadius: 16, border: `1.5px solid ${isActive ? "#00c805" : count > 0 ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.04)"}`, background: isActive ? "rgba(0,200,5,.1)" : count > 0 ? "rgba(22,22,22,.98)" : "rgba(14,14,14,.98)", cursor: count > 0 ? "pointer" : "default", textAlign: "left", transition: "all .25s" }}>
+                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, color: isActive ? "#00c805" : count > 0 ? "#ffffff" : "#333333", marginBottom: 4 }}>{area}</div>
+                <div style={{ fontSize: 11, color: isActive ? "rgba(0,200,5,.7)" : "#555555" }}>{count > 0 ? `${count} exercise${count !== 1 ? "s" : ""} logged` : "Nothing logged yet"}</div>
               </button>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* View switcher + detail — revealed when exercise selected */}
-      {activeExercise && sessions.length > 0 && (
-        <div style={{ marginTop: 4 }}>
-          {/* View switcher right below chips */}
-          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 12 }}>{activeExercise}</p>
-          <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 12, padding: 4, marginBottom: 18, gap: 2 }}>
-            {[["overview","Overview"],["byweek","By Week"],["bysession","By Session"]].map(([k,l]) => (
-              <button key={k} onClick={() => setView(k)}
-                style={{ flex: 1, padding: "9px 4px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, transition: "all .2s", background: view === k ? "rgba(255,255,255,.12)" : "none", color: view === k ? "#ffffff" : "#cccccc" }}>
-                {l}
-              </button>
-            ))}
-          </div>
-
-          {/* ── OVERVIEW ── */}
-          {view === "overview" && (
-            <div className="fade">
-              {/* Quick stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-                {[
-                  { label: "Heaviest Weight", val: `${allTimeMax}`, unit: "lbs — your all time best", color: "#f0b429" },
-                  { label: "Times Trained", val: `${sessions.length}`, unit: "sessions logged", color: "#ffffff" },
-                  { label: "Last Trained", val: lastSession ? formatDate(lastSession.date) : "--", unit: "", color: "#ffffff", small: true },
-                  { label: "Last Session Best", val: `${lastSession?.maxWeight || 0}`, unit: "lbs lifted", color: "#00c805" },
-                ].map(c => (
-                  <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 8, textTransform: "uppercase" }}>{c.label}</div>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 14 : 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
-                    {c.unit && <div style={{ fontSize: 11, color: "#555555" }}>{c.unit}</div>}
-                  </div>
-                ))}
-              </div>
-
-              {/* Progress indicator */}
-              {weekProgress.length >= 2 && (() => {
-                const last = weekProgress[weekProgress.length - 1][1];
-                const prev = weekProgress[weekProgress.length - 2][1];
-                const wtDiff = last.maxWeight - prev.maxWeight;
-                let msg, sub, color;
-                if (wtDiff > 0) { msg = "You are getting stronger."; sub = `You lifted ${wtDiff} lbs more than last week. Keep going.`; color = "#00c805"; }
-                else if (wtDiff === 0) { msg = "Same weight as last week."; sub = `You have been at ${last.maxWeight} lbs. Try adding 5 lbs this session.`; color = "#f0b429"; }
-                else { msg = "Weight went down this week."; sub = "That is okay. Rest and recovery matter. Come back stronger."; color = "#ff4444"; }
-                return (
-                  <div style={{ borderRadius: 14, padding: "14px 16px", marginBottom: 14, background: "rgba(18,18,18,.98)", border: `1.5px solid ${color === "#00c805" ? "rgba(0,200,5,.25)" : color === "#f0b429" ? "rgba(240,180,40,.25)" : "rgba(255,68,68,.25)"}` }}>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, color, marginBottom: 4 }}>{msg}</div>
-                    <div style={{ fontSize: 13, color: "#888888" }}>{sub}</div>
-                  </div>
-                );
-              })()}
-
-              {/* Last session sets */}
-              {lastSession && (
-                <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: 18 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Last session — {formatDate(lastSession.date)}</p>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-                    {lastSession.sets.map((s, i) => (
-                      <span key={i} className="spill">{s.reps} reps x {s.weight} lbs</span>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: 16 }}>
-                    <span style={{ fontSize: 12, color: "#555555" }}>Heaviest: <strong style={{ color: "#ffffff" }}>{lastSession.maxWeight} lbs</strong></span>
-                    <span style={{ fontSize: 12, color: "#555555" }}>Total reps: <strong style={{ color: "#ffffff" }}>{lastSession.totalReps}</strong></span>
-                    <span style={{ fontSize: 12, color: "#555555" }}>Sets: <strong style={{ color: "#ffffff" }}>{lastSession.sets.length}</strong></span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── BY WEEK ── */}
-          {view === "byweek" && (
-            <div className="fade">
-              {weekProgress.length < 2 && <p style={{ color: "#555555", fontSize: 14 }}>Log at least 2 weeks to see weekly trends.</p>}
-              {weekProgress.length >= 2 && (() => {
-                const last = weekProgress[weekProgress.length - 1][1];
-                const prev = weekProgress[weekProgress.length - 2][1];
-                return (
-                  <>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-                      {[
-                        { label: "Max Weight", val: `${last.maxWeight}`, unit: "lbs", diff: last.maxWeight - prev.maxWeight, color: "#f0b429" },
-                        { label: "Total Reps", val: `${weekProgress[weekProgress.length-1][1].totalVol > 0 ? sessions.filter(s => s.date >= weekProgress[weekProgress.length-1][0]).reduce((sum, s) => sum + s.totalReps, 0) : 0}`, unit: "reps this week", diff: 0, color: "#ffffff" }
-                      ].map(c => (
-                        <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: "16px 14px" }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 8, textTransform: "uppercase" }}>{c.label}</div>
-                          <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 4 }}>{c.val}</div>
-                          <div style={{ fontSize: 11, color: "#555555", marginBottom: c.diff !== 0 ? 6 : 0 }}>{c.unit}</div>
-                          {c.diff !== 0 && <div style={{ fontSize: 12, color: c.diff >= 0 ? "#00c805" : "#ff4444", fontWeight: 700 }}>{c.diff >= 0 ? "↑" : "↓"} {Math.abs(c.diff)} lbs vs last wk</div>}
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: 18 }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Heaviest weight per session</p>
-                      {dailyProgress.length > 0 && (() => {
-                        const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0"];
-                        const svgW = 320, svgH = 180;
-                        const pad = { top: 20, right: 16, bottom: 44, left: 48 };
-                        const chartW = svgW - pad.left - pad.right;
-                        const chartH = svgH - pad.top - pad.bottom;
-                        const n = dailyProgress.length;
-                        const barW = Math.min(34, (chartW / Math.max(n,1)) * 0.6);
-                        const gap = chartW / Math.max(n,1);
-                        const yMax = maxDailyWeight * 1.2;
-                        return (
-                          <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
-                            {Array.from({ length: 4 }, (_, ti) => {
-                              const val = Math.round((yMax / 4) * (ti + 1));
-                              const y = pad.top + chartH - (val / yMax) * chartH;
-                              return (
-                                <g key={ti}>
-                                  <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(255,255,255,.06)" strokeWidth="1" strokeDasharray="3,3" />
-                                  <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#555555" fontFamily="Poppins,sans-serif">{val}</text>
-                                </g>
-                              );
-                            })}
-                            <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(255,255,255,.1)" strokeWidth="1.5" />
-                            <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(255,255,255,.1)" strokeWidth="1.5" />
-                            {dailyProgress.map(([day, v], i) => {
-                              const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
-                              const x = pad.left + gap * i + gap/2 - barW/2;
-                              const y = pad.top + chartH - barH;
-                              const isLatest = i === n - 1;
-                              const d = new Date(day + "T12:00:00");
-                              const label = `${d.getMonth()+1}/${d.getDate()}`;
-                              return (
-                                <g key={day}>
-                                  <rect x={x} y={y} width={barW} height={barH} rx="4" fill={isLatest ? "#00c805" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.6} />
-                                  <text x={x + barW/2} y={pad.top + chartH + 14} textAnchor="middle" fontSize="8" fill={isLatest ? "#00c805" : "#555555"} fontFamily="Poppins,sans-serif" fontWeight={isLatest ? "700" : "400"}>{label}</text>
-                                  <text x={x + barW/2} y={y - 4} textAnchor="middle" fontSize="8" fill={isLatest ? "#00c805" : "#666666"} fontFamily="Poppins,sans-serif">{v.maxWeight}</text>
-                                </g>
-                              );
-                            })}
-                          </svg>
-                        );
-                      })()}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* ── BY SESSION ── */}
-          {view === "bysession" && (
-            <div className="fade">
-              <p style={{ fontSize: 13, color: "#888888", marginBottom: 14 }}>Tap any session to see full details.</p>
-              {sessions.map((s, i) => (
-                <div key={s.id || i} style={{ marginBottom: 8 }}>
-                  <button onClick={() => setExpandedSession(expandedSession === i ? null : i)}
-                    style={{ width: "100%", background: expandedSession === i ? "rgba(0,200,5,.06)" : "rgba(18,18,18,.98)", border: `1.5px solid ${expandedSession === i ? "rgba(0,200,5,.2)" : "rgba(255,255,255,.07)"}`, borderRadius: expandedSession === i ? "14px 14px 0 0" : 14, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                    <div style={{ textAlign: "left" }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{formatDate(s.date)}</div>
-                      <div style={{ fontSize: 12, color: "#555555" }}>{s.sets.length} sets · Heaviest: {s.maxWeight} lbs · Total reps: {s.totalReps}</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {i === 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", background: "rgba(0,200,5,.1)", padding: "3px 10px", borderRadius: 20 }}>Latest</span>}
-                      <span style={{ color: "#555555" }}>{expandedSession === i ? "▲" : "▼"}</span>
-                    </div>
-                  </button>
-                  {expandedSession === i && (
-                    <div style={{ background: "rgba(14,14,14,.98)", border: "1.5px solid rgba(0,200,5,.15)", borderTop: "none", borderRadius: "0 0 14px 14px", padding: "14px 16px" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 1fr 1fr", gap: "0 8px", marginBottom: 12 }}>
-                        {["Set","Reps","Weight","Total"].map(h => (
-                          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,.05)", textTransform: "uppercase" }}>{h}</div>
-                        ))}
-                        {s.sets.map((set, si) => [
-                          <div key={`n${si}`} style={{ fontSize: 13, fontWeight: 700, color: "#00c805", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)" }}>{si + 1}</div>,
-                          <div key={`r${si}`} style={{ fontSize: 13, color: "#ffffff", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)", fontWeight: 600 }}>{set.reps}</div>,
-                          <div key={`w${si}`} style={{ fontSize: 13, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)", fontWeight: set.weight === s.maxWeight ? 700 : 600 }}>{set.weight} lbs</div>,
-                          <div key={`v${si}`} style={{ fontSize: 12, color: "#555555", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.04)" }}>{set.reps * set.weight}</div>
-                        ])}
-                      </div>
-                      <div style={{ fontSize: 11, color: "#555555" }}>Total: {s.totalReps} reps across {s.sets.length} sets</div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+            );
+          })}
         </div>
       )}
 
-      {/* All Time Overview — moved to bottom, simplified */}
+      {/* Level 2 — Exercise list slides in below the grid */}
+      {selectedArea && areaExercises.length > 0 && (
+        <div style={{ marginTop: 10, background: "rgba(16,16,16,.98)", border: "1.5px solid rgba(0,200,5,.12)", borderRadius: 16, overflow: "hidden", animation: "slideDown .25s ease" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#00c805", letterSpacing: 1.5, textTransform: "uppercase" }}>{selectedArea}</span>
+          </div>
+          {areaExercises.map((ex, i) => {
+            const exSessions = workouts.filter(w => w.exercise === ex);
+            const bestWeight = exSessions.length ? Math.max(...exSessions.flatMap(w => (Array.isArray(w.sets) ? w.sets : []).map(s => s.weight || 0))) : 0;
+            const isSelected = activeExercise === ex;
+            return (
+              <div key={ex}>
+                <button onClick={() => handleExerciseTap(ex)}
+                  style={{ width: "100%", padding: "14px 16px", border: "none", background: isSelected ? "rgba(0,200,5,.08)" : "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: i < areaExercises.length - 1 ? "1px solid rgba(255,255,255,.04)" : "none", transition: "background .2s" }}>
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#00c805" : "#ffffff" }}>{ex}</div>
+                    <div style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{exSessions.length} session{exSessions.length !== 1 ? "s" : ""} · Best: {bestWeight} lbs</div>
+                  </div>
+                  <span style={{ color: isSelected ? "#00c805" : "#444444", fontSize: 14, marginLeft: 8 }}>{isSelected ? "▲" : "▶"}</span>
+                </button>
+
+                {/* Level 3 — Summary slides in directly below the selected exercise */}
+                {isSelected && (
+                  <div style={{ background: "rgba(12,12,12,.98)", borderTop: "1px solid rgba(0,200,5,.1)", animation: "slideDown .2s ease" }}>
+                    {/* View switcher */}
+                    <div style={{ display: "flex", padding: "10px 12px", gap: 6, borderBottom: "1px solid rgba(255,255,255,.04)" }}>
+                      {[["overview","Overview"],["byweek","By Week"],["bysession","Sessions"]].map(([k,l]) => (
+                        <button key={k} onClick={() => setView(k)}
+                          style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: view === k ? "rgba(255,255,255,.1)" : "rgba(22,22,22,.98)", color: view === k ? "#ffffff" : "#666666", transition: "all .2s" }}>
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ padding: "16px 14px" }}>
+
+                      {/* OVERVIEW */}
+                      {view === "overview" && (
+                        <div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                            {[
+                              { label: "All Time Best", val: `${allTimeMax} lbs`, sub: "heaviest weight ever", color: "#f0b429" },
+                              { label: "Times Trained", val: sessions.length, sub: "sessions logged", color: "#ffffff" },
+                              { label: "Last Trained", val: lastSession ? formatDate(lastSession.date) : "--", sub: "", color: "#ffffff", small: true },
+                              { label: "Last Best", val: `${lastSession?.maxWeight || 0} lbs`, sub: "last session", color: "#00c805" },
+                            ].map(c => (
+                              <div key={c.label} style={{ background: "rgba(20,20,20,.98)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px" }}>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: "#555555", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
+                                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 13 : 18, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
+                                {c.sub && <div style={{ fontSize: 10, color: "#444444" }}>{c.sub}</div>}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Progress indicator */}
+                          {weekProgress.length >= 2 && (() => {
+                            const last = weekProgress[weekProgress.length - 1][1];
+                            const prev = weekProgress[weekProgress.length - 2][1];
+                            const diff = last.maxWeight - prev.maxWeight;
+                            const msg = diff > 0 ? "Getting stronger." : diff === 0 ? "Same as last week. Try adding 5 lbs." : "Weight dipped. Rest and recover.";
+                            const color = diff > 0 ? "#00c805" : diff === 0 ? "#f0b429" : "#ff4444";
+                            return (
+                              <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(20,20,20,.98)", border: `1px solid ${diff > 0 ? "rgba(0,200,5,.2)" : diff === 0 ? "rgba(240,180,40,.2)" : "rgba(255,68,68,.2)"}`, marginBottom: 14 }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color, marginBottom: 3 }}>{msg}</div>
+                                {diff !== 0 && <div style={{ fontSize: 11, color: "#555555" }}>{diff > 0 ? `Up ${diff} lbs` : `Down ${Math.abs(diff)} lbs`} vs last week</div>}
+                              </div>
+                            );
+                          })()}
+
+                          {lastSession && (
+                            <div style={{ background: "rgba(20,20,20,.98)", borderRadius: 12, border: "1px solid rgba(255,255,255,.06)", padding: "12px 14px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Last session — {formatDate(lastSession.date)}</div>
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {lastSession.sets.map((s, si) => (
+                                  <span key={si} style={{ fontSize: 12, color: "#00c805", background: "rgba(0,200,5,.08)", padding: "3px 10px", borderRadius: 20, fontWeight: 500 }}>{s.reps} x {s.weight} lbs</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* BY WEEK */}
+                      {view === "byweek" && (
+                        <div>
+                          {weekProgress.length < 2 && <p style={{ color: "#555555", fontSize: 13 }}>Log at least 2 weeks to see trends.</p>}
+                          {dailyProgress.length > 0 && (() => {
+                            const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0"];
+                            const svgW = 300, svgH = 160;
+                            const pad = { top: 18, right: 12, bottom: 38, left: 44 };
+                            const chartW = svgW - pad.left - pad.right;
+                            const chartH = svgH - pad.top - pad.bottom;
+                            const n = dailyProgress.length;
+                            const barW = Math.min(28, (chartW / Math.max(n,1)) * 0.6);
+                            const gap = chartW / Math.max(n,1);
+                            const yMax = maxDailyWeight * 1.2;
+                            return (
+                              <div style={{ marginBottom: 14 }}>
+                                <p style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Max weight per session</p>
+                                <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
+                                  {Array.from({ length: 4 }, (_, ti) => {
+                                    const val = Math.round((yMax / 4) * (ti + 1));
+                                    const y = pad.top + chartH - (val / yMax) * chartH;
+                                    return (
+                                      <g key={ti}>
+                                        <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(255,255,255,.05)" strokeWidth="1" strokeDasharray="3,3" />
+                                        <text x={pad.left - 5} y={y + 4} textAnchor="end" fontSize="8" fill="#444444" fontFamily="Poppins,sans-serif">{val}</text>
+                                      </g>
+                                    );
+                                  })}
+                                  <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(255,255,255,.08)" strokeWidth="1" />
+                                  <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(255,255,255,.08)" strokeWidth="1" />
+                                  {dailyProgress.map(([day, v], i) => {
+                                    const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
+                                    const x = pad.left + gap * i + gap/2 - barW/2;
+                                    const y = pad.top + chartH - barH;
+                                    const isLatest = i === n - 1;
+                                    const d = new Date(day + "T12:00:00");
+                                    return (
+                                      <g key={day}>
+                                        <rect x={x} y={y} width={barW} height={barH} rx="3" fill={isLatest ? "#00c805" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.5} />
+                                        <text x={x + barW/2} y={pad.top + chartH + 12} textAnchor="middle" fontSize="7" fill={isLatest ? "#00c805" : "#444444"} fontFamily="Poppins,sans-serif">{`${d.getMonth()+1}/${d.getDate()}`}</text>
+                                        <text x={x + barW/2} y={y - 4} textAnchor="middle" fontSize="7" fill={isLatest ? "#00c805" : "#555555"} fontFamily="Poppins,sans-serif">{v.maxWeight}</text>
+                                      </g>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                            );
+                          })()}
+                          {weekProgress.length >= 2 && (() => {
+                            const last = weekProgress[weekProgress.length - 1][1];
+                            const prev = weekProgress[weekProgress.length - 2][1];
+                            const diff = last.maxWeight - prev.maxWeight;
+                            return (
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                {[
+                                  { label: "This Week Best", val: `${last.maxWeight} lbs`, diff },
+                                  { label: "Last Week Best", val: `${prev.maxWeight} lbs`, diff: null },
+                                ].map(c => (
+                                  <div key={c.label} style={{ background: "rgba(20,20,20,.98)", borderRadius: 12, border: "1px solid rgba(255,255,255,.06)", padding: "12px 12px" }}>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{c.label}</div>
+                                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{c.val}</div>
+                                    {c.diff !== null && <div style={{ fontSize: 11, color: c.diff >= 0 ? "#00c805" : "#ff4444", fontWeight: 600 }}>{c.diff >= 0 ? `+${c.diff}` : c.diff} lbs</div>}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {/* BY SESSION */}
+                      {view === "bysession" && (
+                        <div>
+                          {sessions.length === 0 && <p style={{ color: "#555555", fontSize: 13 }}>No sessions yet.</p>}
+                          {sessions.map((s, si) => (
+                            <div key={s.id || si} style={{ marginBottom: 6 }}>
+                              <button onClick={() => setExpandedSession(expandedSession === si ? null : si)}
+                                style={{ width: "100%", padding: "12px 14px", border: "none", background: expandedSession === si ? "rgba(0,200,5,.06)" : "rgba(20,20,20,.98)", borderRadius: expandedSession === si ? "10px 10px 0 0" : 10, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div style={{ textAlign: "left" }}>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>{formatDate(s.date)}</div>
+                                  <div style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{s.sets.length} sets · Best {s.maxWeight} lbs · {s.totalReps} reps</div>
+                                </div>
+                                <span style={{ color: "#444444", fontSize: 12 }}>{expandedSession === si ? "▲" : "▼"}</span>
+                              </button>
+                              {expandedSession === si && (
+                                <div style={{ background: "rgba(14,14,14,.98)", borderRadius: "0 0 10px 10px", padding: "10px 14px" }}>
+                                  {s.sets.map((set, ssi) => (
+                                    <div key={ssi} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: ssi < s.sets.length - 1 ? "1px solid rgba(255,255,255,.04)" : "none" }}>
+                                      <span style={{ fontSize: 12, color: "#555555" }}>Set {ssi + 1}</span>
+                                      <span style={{ fontSize: 12, color: "#ffffff", fontWeight: 600 }}>{set.reps} reps</span>
+                                      <span style={{ fontSize: 12, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff", fontWeight: set.weight === s.maxWeight ? 700 : 500 }}>{set.weight} lbs</span>
+                                      <span style={{ fontSize: 12, color: "#444444" }}>{set.reps * set.weight} total</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Overall stats — bottom */}
       {workouts.length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#555555", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>Your Overall Stats</p>
+        <div style={{ marginTop: 28 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#444444", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>Your Overall Stats</p>
           {(() => {
-            const totalSessions = workouts.length;
             const totalRepsAll = workouts.reduce((sum, w) => sum + (Array.isArray(w.sets) ? w.sets : []).reduce((s2, s) => s2 + s.reps, 0), 0);
             const groupCount = {};
             workouts.forEach(w => {
-              let cat = "Other";
-              for (const [c, exs] of Object.entries(categories)) { if (exs.includes(w.exercise)) { cat = c; break; } }
-              groupCount[cat] = (groupCount[cat] || 0) + 1;
+              const area = getBodyArea(w.exercise);
+              groupCount[area] = (groupCount[area] || 0) + 1;
             });
-            const topGroup = Object.entries(groupCount).sort((a,b) => b[1]-a[1])[0];
-            const allEx = [...new Set(workouts.map(w => w.exercise))];
-            const maxCnt = Math.max(...Object.values(groupCount));
+            const maxCnt = Math.max(...Object.values(groupCount), 1);
             return (
               <div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
                   {[
-                    { label: "Times Trained", val: totalSessions, sub: "total sessions logged" },
-                    { label: "Moves Tracked", val: allEx.length, sub: "different exercises" },
-                    { label: "Total Reps", val: totalRepsAll.toLocaleString(), sub: "reps logged all time" },
-                    { label: "Most Trained", val: topGroup ? topGroup[0] : "--", sub: topGroup ? `${topGroup[1]} sessions` : "", small: true },
+                    { label: "Times Trained", val: workouts.length, sub: "total sessions" },
+                    { label: "Total Reps", val: totalRepsAll.toLocaleString(), sub: "reps all time" },
                   ].map(c => (
-                    <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 14, padding: "14px 12px" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "#555555", letterSpacing: 1.2, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
-                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 13 : 20, fontWeight: 700, color: "#ffffff", lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
-                      <div style={{ fontSize: 10, color: "#555555" }}>{c.sub}</div>
+                    <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px" }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "#444444", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
+                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>{c.val}</div>
+                      <div style={{ fontSize: 10, color: "#444444" }}>{c.sub}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 14, padding: "14px 16px" }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 12 }}>How Often You Train Each Muscle</p>
-                  {Object.entries(groupCount).sort((a,b) => b[1]-a[1]).map(([cat, cnt]) => (
-                    <div key={cat} style={{ marginBottom: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                        <span style={{ fontSize: 12, color: "#aaaaaa" }}>{cat}</span>
-                        <span style={{ fontSize: 12, color: "#555555" }}>{cnt} session{cnt !== 1 ? "s" : ""}</span>
+                <div style={{ background: "rgba(18,18,18,.98)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 14px" }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, color: "#444444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Training split</p>
+                  {Object.entries(groupCount).sort((a,b) => b[1]-a[1]).map(([area, cnt]) => (
+                    <div key={area} style={{ marginBottom: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: "#aaaaaa" }}>{area}</span>
+                        <span style={{ fontSize: 12, color: "#444444" }}>{cnt}</span>
                       </div>
-                      <div style={{ background: "rgba(255,255,255,.05)", borderRadius: 100, height: 5, overflow: "hidden" }}>
+                      <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 100, height: 4, overflow: "hidden" }}>
                         <div style={{ width: `${(cnt/maxCnt)*100}%`, height: "100%", background: "#00c805", borderRadius: 100 }} />
                       </div>
                     </div>
@@ -1153,257 +1189,6 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
           })()}
         </div>
       )}
-    </div>
-  );
-}
-
-
-
-// ─── Cardio Categories ────────────────────────────────────────────────────────
-const CARDIO_CATEGORIES = {
-  "Machines": ["Treadmill","Stair Climber","Elliptical","Rowing Machine","Stationary Bike","Air Bike","Ski Erg","Jacob's Ladder"],
-  "HIIT": ["Circuit Training","Tabata","Jump Rope","Battle Ropes","Box Jumps","Burpees","Sprint Intervals","Sled Push","Sled Pull","Kettlebell Swings"],
-  "Outdoor": ["Running","Walking","Cycling","Swimming","Hiking","Trail Run","Sprints"],
-  "Classes and Other": ["Yoga","Pilates","Boxing","Kickboxing","CrossFit","Dance","Spin Class","Martial Arts"]
-};
-
-// ─── Cardio Logger ────────────────────────────────────────────────────────────
-function CardioLogger({ user, date, onSave, customCardio, setCustomCardio }) {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedActivity, setSelectedActivity] = useState("");
-  const [customActivity, setCustomActivity] = useState("");
-  const [customCategory, setCustomCategory] = useState("Machines");
-  const [durationMins, setDurationMins] = useState("30");
-  const [distance, setDistance] = useState("");
-  const [distanceUnit, setDistanceUnit] = useState("miles");
-  const [intensity, setIntensity] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const allCategories = useMemo(() => {
-    const merged = {};
-    Object.entries(CARDIO_CATEGORIES).forEach(([cat, acts]) => { merged[cat] = [...acts]; });
-    (customCardio || []).forEach(({ name, category }) => {
-      if (!merged[category]) merged[category] = [];
-      if (!merged[category].includes(name)) merged[category].push(name);
-    });
-    return merged;
-  }, [customCardio]);
-
-  const currentActivities = selectedCategory ? (allCategories[selectedCategory] || []) : [];
-
-  const validate = () => {
-    const errs = {};
-    const activityName = customActivity.trim() || selectedActivity;
-    if (!activityName) errs.activity = "please select or enter a cardio activity";
-    const dur = Number(durationMins);
-    if (!dur || dur <= 0) errs.duration = "please enter duration";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validate()) return;
-    setSaving(true);
-    const activityName = customActivity.trim() || selectedActivity;
-    const dur = Number(durationMins);
-    try {
-      if (customActivity.trim()) {
-        const exists = (customCardio || []).find(c => c.name.toLowerCase() === customActivity.trim().toLowerCase());
-        if (!exists) {
-          const { data } = await supabase.from("custom_cardio").insert({ username: user.username, name: customActivity.trim(), category: customCategory }).select();
-          if (data) setCustomCardio(prev => [...prev, data[0]]);
-        }
-      }
-      const { data } = await supabase.from("cardio_sessions").insert({
-        username: user.username, date, activity: activityName,
-        category: selectedCategory || customCategory,
-        duration_mins: dur,
-        distance: distance ? Number(distance) : null,
-        distance_unit: distance ? distanceUnit : null,
-        intensity: intensity || null
-      }).select();
-      if (data && data[0]) onSave(data[0]);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2200);
-      setSelectedActivity(""); setCustomActivity(""); setDistance(""); setIntensity(null); setDurationMins("30");
-    } catch (e) { alert("Error saving. Please try again."); }
-    setSaving(false);
-  };
-
-  return (
-    <div>
-      <div style={{ marginBottom: 20 }}>
-        <label className="lbl">Category</label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {Object.keys(CARDIO_CATEGORIES).map(cat => (
-            <button key={cat} onClick={() => { setSelectedCategory(cat); setSelectedActivity(""); }}
-              style={{ padding: "14px 10px", borderRadius: 14, border: `1.5px solid ${selectedCategory === cat ? "#00c805" : "rgba(255,255,255,.08)"}`, background: selectedCategory === cat ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: selectedCategory === cat ? "#00c805" : "#aaaaaa", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}>
-              {cat}
-            </button>
-          ))}
-        </div>
-        {errors.activity && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.activity}</p>}
-      </div>
-
-      {selectedCategory && (
-        <div style={{ marginBottom: 20 }}>
-          <label className="lbl">{selectedCategory}</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {currentActivities.map(act => (
-              <button key={act} onClick={() => { setSelectedActivity(act); setCustomActivity(""); }}
-                style={{ padding: "8px 14px", borderRadius: 20, border: `1.5px solid ${selectedActivity === act ? "#00c805" : "rgba(255,255,255,.1)"}`, background: selectedActivity === act ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: selectedActivity === act ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
-                {act}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginBottom: 20 }}>
-        <label className="lbl">Or enter a custom activity</label>
-        <input className="field" value={customActivity} onChange={e => { setCustomActivity(e.target.value); setSelectedActivity(""); }} placeholder="e.g. Paddle boarding" style={{ marginBottom: customActivity.trim() ? 10 : 0 }} />
-        {customActivity.trim() && (
-          <div style={{ marginTop: 10 }}>
-            <label className="lbl">Save under category</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {Object.keys(CARDIO_CATEGORIES).map(cat => (
-                <button key={cat} onClick={() => setCustomCategory(cat)}
-                  style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${customCategory === cat ? "#00c805" : "rgba(255,255,255,.1)"}`, background: customCategory === cat ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: customCategory === cat ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
-                  {cat}
-                </button>
-              ))}
-            </div>
-            <p style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>Saved to your {customCategory} list permanently.</p>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <label className="lbl" style={{ marginBottom: 0 }}>Duration (minutes) <span style={{ color: "#ff4444" }}>*</span></label>
-        </div>
-        <input type="number" className="field" value={durationMins} onChange={e => setDurationMins(e.target.value)}
-          placeholder="e.g. 45" inputMode="numeric" style={{ textAlign: "center", fontSize: 22, fontWeight: 700 }} />
-        {errors.duration && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.duration}</p>}
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <label className="lbl">Distance <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-        <div style={{ display: "flex", gap: 10 }}>
-          <input type="number" className="field" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" style={{ flex: 1 }} />
-          <div style={{ display: "flex", background: "rgba(10,10,10,.9)", borderRadius: 12, padding: 4, gap: 2 }}>
-            {["miles","km"].map(u => (
-              <button key={u} onClick={() => setDistanceUnit(u)}
-                style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: distanceUnit === u ? "rgba(255,255,255,.1)" : "none", color: distanceUnit === u ? "#ffffff" : "#666666" }}>
-                {u}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 24 }}>
-        <label className="lbl">Intensity <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-        <div style={{ display: "flex", gap: 10 }}>
-          {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
-            <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
-              style={{ flex: 1, padding: "12px 8px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.08)"}`, background: intensity === lvl ? bg : "rgba(22,22,22,.98)", color: intensity === lvl ? color : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-              {lvl}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={handleSave} disabled={saving}
-        style={{ background: "#00c805", border: "none", borderRadius: 14, padding: 14, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", opacity: saving ? .7 : 1 }}>
-        {saving ? "Saving..." : saved ? "Saved!" : "Save Cardio Session"}
-      </button>
-    </div>
-  );
-}
-
-// ─── Edit Cardio Modal ────────────────────────────────────────────────────────
-function EditCardioModal({ session, onSave, onDelete, onClose }) {
-  const [activity, setActivity] = useState(session.activity);
-  const [duration, setDuration] = useState(String(session.duration_mins));
-  const [distance, setDistance] = useState(String(session.distance || ""));
-  const [distanceUnit, setDistanceUnit] = useState(session.distance_unit || "miles");
-  const [intensity, setIntensity] = useState(session.intensity || null);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (!duration || Number(duration) <= 0) return;
-    setSaving(true);
-    try {
-      const updates = { activity: activity.trim(), duration_mins: Number(duration), distance: distance ? Number(distance) : null, distance_unit: distance ? distanceUnit : null, intensity: intensity || null };
-      const { error } = await supabase.from("cardio_sessions").update(updates).eq("id", session.id);
-      if (error) throw new Error(error.message);
-      onSave({ ...session, ...updates });
-    } catch (e) { alert("Error saving. Please try again."); }
-    setSaving(false);
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm("Delete this cardio session?")) return;
-    try {
-      await supabase.from("cardio_sessions").delete().eq("id", session.id);
-      onDelete(session.id);
-    } catch (e) { alert("Error deleting."); }
-  };
-
-  return (
-    <div className="overlay">
-      <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 22, width: "100%", maxWidth: 420, padding: 26 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>Edit Cardio</p>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#555555", cursor: "pointer" }}>x</button>
-        </div>
-        <p style={{ fontSize: 11, color: "#555555", marginBottom: 18 }}>{formatDate(session.date)}</p>
-
-        <div style={{ marginBottom: 14 }}>
-          <label className="lbl">Activity</label>
-          <input value={activity} onChange={e => setActivity(e.target.value)} className="field" />
-        </div>
-        <div style={{ marginBottom: 14 }}>
-          <label className="lbl">Duration (minutes)</label>
-          <input type="number" value={duration} onChange={e => setDuration(e.target.value)} className="field" style={{ textAlign: "center", fontSize: 20, fontWeight: 700 }} />
-        </div>
-        <div style={{ marginBottom: 14 }}>
-          <label className="lbl">Distance <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-          <div style={{ display: "flex", gap: 10 }}>
-            <input type="number" value={distance} onChange={e => setDistance(e.target.value)} className="field" placeholder="0.0" style={{ flex: 1 }} />
-            <div style={{ display: "flex", background: "rgba(255,255,255,.05)", borderRadius: 12, padding: 4, gap: 2 }}>
-              {["miles","km"].map(u => (
-                <button key={u} onClick={() => setDistanceUnit(u)}
-                  style={{ padding: "8px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: distanceUnit === u ? "rgba(255,255,255,.1)" : "none", color: distanceUnit === u ? "#ffffff" : "#666666" }}>
-                  {u}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div style={{ marginBottom: 20 }}>
-          <label className="lbl">Intensity <span style={{ color: "#555555", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
-              <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
-                style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.1)"}`, background: intensity === lvl ? bg : "rgba(18,18,18,.98)", color: intensity === lvl ? color : "#888888", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                {lvl}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button onClick={handleSave} disabled={saving}
-          style={{ background: "#00c805", border: "none", borderRadius: 12, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", marginBottom: 10 }}>
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
-        <button onClick={handleDelete}
-          style={{ background: "rgba(255,68,68,.08)", border: "1.5px solid rgba(255,68,68,.25)", borderRadius: 12, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#ff4444", width: "100%" }}>
-          Delete Session
-        </button>
-      </div>
     </div>
   );
 }
