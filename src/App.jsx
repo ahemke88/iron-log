@@ -867,25 +867,23 @@ const BODY_AREAS = {
   "Other":      ["Other"]
 };
 
-function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, weekProgress, dailyProgress, maxVol, maxDailyWeight }) {
+function ProgressTab({ workouts, categories }) {
   const [selectedArea, setSelectedArea] = useState(null);
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const [view, setView] = useState("overview");
   const [expandedSession, setExpandedSession] = useState(null);
 
-  // Map each exercise to a body area
-  const getBodyArea = (exerciseName) => {
-    for (const [cat, exercises] of Object.entries(categories)) {
-      if (exercises.includes(exerciseName)) {
+  const getBodyArea = (ex) => {
+    for (const [cat, exs] of Object.entries(categories)) {
+      if (exs.includes(ex)) {
         for (const [area, cats] of Object.entries(BODY_AREAS)) {
           if (cats.includes(cat)) return area;
         }
-        return "Other";
       }
     }
     return "Other";
   };
 
-  // Logged exercises grouped by body area
   const loggedByArea = useMemo(() => {
     const map = {};
     [...new Set(workouts.map(w => w.exercise))].forEach(ex => {
@@ -896,298 +894,332 @@ function ProgressTab({ workouts, categories, activeExercise, setActiveExercise, 
     return map;
   }, [workouts, categories]);
 
-  const areaExercises = selectedArea ? (loggedByArea[selectedArea] || []) : [];
-
   const sessions = useMemo(() => {
-    if (!activeExercise) return [];
+    if (!selectedExercise) return [];
     return workouts
-      .filter(w => w.exercise === activeExercise)
+      .filter(w => w.exercise === selectedExercise)
       .map(w => ({
         ...w,
         sets: Array.isArray(w.sets) ? w.sets : [],
         maxWeight: Math.max(...(Array.isArray(w.sets) ? w.sets : []).map(s => s.weight || 0), 0),
-        totalReps: (Array.isArray(w.sets) ? w.sets : []).reduce((sum, s) => sum + s.reps, 0),
+        totalReps: (Array.isArray(w.sets) ? w.sets : []).reduce((s, r) => s + r.reps, 0),
       }))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [workouts, activeExercise]);
+  }, [workouts, selectedExercise]);
 
+  const weekProgress = useMemo(() => {
+    if (!selectedExercise) return [];
+    const byWeek = {};
+    workouts.filter(w => w.exercise === selectedExercise).forEach(w => {
+      const dt = new Date(w.date), day = dt.getDay();
+      const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+      const wk = new Date(dt.setDate(diff)).toISOString().split("T")[0];
+      if (!byWeek[wk]) byWeek[wk] = { maxWeight: 0 };
+      (Array.isArray(w.sets) ? w.sets : []).forEach(s => {
+        byWeek[wk].maxWeight = Math.max(byWeek[wk].maxWeight, s.weight || 0);
+      });
+    });
+    return Object.entries(byWeek).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [workouts, selectedExercise]);
+
+  const dailyProgress = useMemo(() => {
+    if (!selectedExercise) return [];
+    const byDay = {};
+    workouts.filter(w => w.exercise === selectedExercise).forEach(w => {
+      if (!byDay[w.date]) byDay[w.date] = { maxWeight: 0 };
+      (Array.isArray(w.sets) ? w.sets : []).forEach(s => {
+        byDay[w.date].maxWeight = Math.max(byDay[w.date].maxWeight, s.weight || 0);
+      });
+    });
+    return Object.entries(byDay).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [workouts, selectedExercise]);
+
+  const maxDailyWeight = useMemo(() => Math.max(...dailyProgress.map(([, v]) => v.maxWeight), 1), [dailyProgress]);
   const allTimeMax = useMemo(() => sessions.length ? Math.max(...sessions.map(s => s.maxWeight)) : 0, [sessions]);
   const lastSession = sessions[0];
 
-  const handleAreaTap = (area) => {
-    if (selectedArea === area) { setSelectedArea(null); setActiveExercise(null); }
-    else { setSelectedArea(area); setActiveExercise(null); }
+  const tapArea = (area) => {
+    if (selectedArea === area) { setSelectedArea(null); setSelectedExercise(null); }
+    else { setSelectedArea(area); setSelectedExercise(null); }
     setView("overview"); setExpandedSession(null);
   };
 
-  const handleExerciseTap = (ex) => {
-    if (activeExercise === ex) { setActiveExercise(null); }
-    else { setActiveExercise(ex); setView("overview"); setExpandedSession(null); }
+  const tapExercise = (ex) => {
+    if (selectedExercise === ex) { setSelectedExercise(null); }
+    else { setSelectedExercise(ex); setView("overview"); setExpandedSession(null); }
   };
 
   return (
-    <div className="fade">
+    <div className="fade" style={{ paddingBottom: 20 }}>
       <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 21, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>Progress</p>
-      <p style={{ fontSize: 13, color: "#888888", marginBottom: 20 }}>Select a body area, then an exercise.</p>
+      <p style={{ fontSize: 13, color: "#666666", marginBottom: 20 }}>Select a body area then an exercise.</p>
 
       {workouts.length === 0 && (
-        <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 18, padding: 28, textAlign: "center" }}>
-          <p style={{ color: "#555555" }}>Log workouts to see your progress.</p>
+        <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.07)", borderRadius: 16, padding: 28, textAlign: "center" }}>
+          <p style={{ color: "#444444", fontSize: 14 }}>Log workouts to see your progress.</p>
         </div>
       )}
 
-      {/* Level 1 — Body area grid */}
       {workouts.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
-          {Object.keys(BODY_AREAS).map(area => {
-            const count = (loggedByArea[area] || []).length;
-            const isActive = selectedArea === area;
-            return (
-              <button key={area} onClick={() => handleAreaTap(area)} disabled={count === 0}
-                style={{ padding: "16px 14px", borderRadius: 16, border: `1.5px solid ${isActive ? "#00c805" : count > 0 ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.04)"}`, background: isActive ? "rgba(0,200,5,.1)" : count > 0 ? "rgba(22,22,22,.98)" : "rgba(14,14,14,.98)", cursor: count > 0 ? "pointer" : "default", textAlign: "left", transition: "all .25s" }}>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, color: isActive ? "#00c805" : count > 0 ? "#ffffff" : "#333333", marginBottom: 4 }}>{area}</div>
-                <div style={{ fontSize: 11, color: isActive ? "rgba(0,200,5,.7)" : "#555555" }}>{count > 0 ? `${count} exercise${count !== 1 ? "s" : ""} logged` : "Nothing logged yet"}</div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Level 2 — Exercise list slides in below the grid */}
-      {selectedArea && areaExercises.length > 0 && (
-        <div style={{ marginTop: 10, background: "rgba(16,16,16,.98)", border: "1.5px solid rgba(0,200,5,.12)", borderRadius: 16, overflow: "hidden", animation: "slideDown .25s ease" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#00c805", letterSpacing: 1.5, textTransform: "uppercase" }}>{selectedArea}</span>
-          </div>
-          {areaExercises.map((ex, i) => {
-            const exSessions = workouts.filter(w => w.exercise === ex);
-            const bestWeight = exSessions.length ? Math.max(...exSessions.flatMap(w => (Array.isArray(w.sets) ? w.sets : []).map(s => s.weight || 0))) : 0;
-            const isSelected = activeExercise === ex;
-            return (
-              <div key={ex}>
-                <button onClick={() => handleExerciseTap(ex)}
-                  style={{ width: "100%", padding: "14px 16px", border: "none", background: isSelected ? "rgba(0,200,5,.08)" : "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: i < areaExercises.length - 1 ? "1px solid rgba(255,255,255,.04)" : "none", transition: "background .2s" }}>
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#00c805" : "#ffffff" }}>{ex}</div>
-                    <div style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{exSessions.length} session{exSessions.length !== 1 ? "s" : ""} · Best: {bestWeight} lbs</div>
+        <>
+          {/* Level 1 — Body area 2x2 grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            {Object.keys(BODY_AREAS).map(area => {
+              const count = (loggedByArea[area] || []).length;
+              const isActive = selectedArea === area;
+              return (
+                <button key={area} onClick={() => count > 0 && tapArea(area)}
+                  style={{ padding: "18px 14px", borderRadius: 16, border: `1.5px solid ${isActive ? "#00c805" : count > 0 ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.03)"}`, background: isActive ? "rgba(0,200,5,.1)" : count > 0 ? "rgba(20,20,20,.98)" : "rgba(14,14,14,.98)", cursor: count > 0 ? "pointer" : "default", textAlign: "left", transition: "all .22s" }}>
+                  <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, color: isActive ? "#00c805" : count > 0 ? "#ffffff" : "#2a2a2a", marginBottom: 5 }}>{area}</div>
+                  <div style={{ fontSize: 11, color: isActive ? "rgba(0,200,5,.65)" : "#444444" }}>
+                    {count > 0 ? `${count} exercise${count !== 1 ? "s" : ""} logged` : "Nothing logged yet"}
                   </div>
-                  <span style={{ color: isSelected ? "#00c805" : "#444444", fontSize: 14, marginLeft: 8 }}>{isSelected ? "▲" : "▶"}</span>
                 </button>
+              );
+            })}
+          </div>
 
-                {/* Level 3 — Summary slides in directly below the selected exercise */}
-                {isSelected && (
-                  <div style={{ background: "rgba(12,12,12,.98)", borderTop: "1px solid rgba(0,200,5,.1)", animation: "slideDown .2s ease" }}>
-                    {/* View switcher */}
-                    <div style={{ display: "flex", padding: "10px 12px", gap: 6, borderBottom: "1px solid rgba(255,255,255,.04)" }}>
-                      {[["overview","Overview"],["byweek","By Week"],["bysession","Sessions"]].map(([k,l]) => (
-                        <button key={k} onClick={() => setView(k)}
-                          style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: view === k ? "rgba(255,255,255,.1)" : "rgba(22,22,22,.98)", color: view === k ? "#ffffff" : "#666666", transition: "all .2s" }}>
-                          {l}
-                        </button>
-                      ))}
-                    </div>
+          {/* Level 2 — Exercise list slides in */}
+          {selectedArea && (loggedByArea[selectedArea] || []).length > 0 && (
+            <div style={{ background: "rgba(14,14,14,.98)", border: "1.5px solid rgba(0,200,5,.15)", borderRadius: 16, overflow: "hidden", marginBottom: 10, animation: "slideDown .22s ease" }}>
+              <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#00c805", letterSpacing: 1.8, textTransform: "uppercase" }}>{selectedArea}</span>
+              </div>
 
-                    <div style={{ padding: "16px 14px" }}>
+              {(loggedByArea[selectedArea] || []).map((ex, i) => {
+                const exSessions = workouts.filter(w => w.exercise === ex);
+                const bestW = exSessions.length ? Math.max(...exSessions.flatMap(w => (Array.isArray(w.sets) ? w.sets : []).map(s => s.weight || 0))) : 0;
+                const isSelected = selectedExercise === ex;
+                const isLast = i === (loggedByArea[selectedArea] || []).length - 1;
 
-                      {/* OVERVIEW */}
-                      {view === "overview" && (
-                        <div>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-                            {[
-                              { label: "All Time Best", val: `${allTimeMax} lbs`, sub: "heaviest weight ever", color: "#f0b429" },
-                              { label: "Times Trained", val: sessions.length, sub: "sessions logged", color: "#ffffff" },
-                              { label: "Last Trained", val: lastSession ? formatDate(lastSession.date) : "--", sub: "", color: "#ffffff", small: true },
-                              { label: "Last Best", val: `${lastSession?.maxWeight || 0} lbs`, sub: "last session", color: "#00c805" },
-                            ].map(c => (
-                              <div key={c.label} style={{ background: "rgba(20,20,20,.98)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px" }}>
-                                <div style={{ fontSize: 9, fontWeight: 700, color: "#555555", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
-                                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 13 : 18, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
-                                {c.sub && <div style={{ fontSize: 10, color: "#444444" }}>{c.sub}</div>}
-                              </div>
-                            ))}
-                          </div>
+                return (
+                  <div key={ex}>
+                    {/* Exercise row */}
+                    <button onClick={() => tapExercise(ex)}
+                      style={{ width: "100%", padding: "14px 16px", border: "none", background: isSelected ? "rgba(0,200,5,.07)" : "transparent", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: (!isSelected && !isLast) ? "1px solid rgba(255,255,255,.04)" : "none", transition: "background .18s" }}>
+                      <div style={{ textAlign: "left" }}>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#00c805" : "#dddddd", marginBottom: 3 }}>{ex}</div>
+                        <div style={{ fontSize: 11, color: "#444444" }}>{exSessions.length} session{exSessions.length !== 1 ? "s" : ""} &middot; Best: {bestW} lbs</div>
+                      </div>
+                      <span style={{ fontSize: 13, color: isSelected ? "#00c805" : "#333333", marginLeft: 12, flexShrink: 0 }}>{isSelected ? "▲" : "▶"}</span>
+                    </button>
 
-                          {/* Progress indicator */}
-                          {weekProgress.length >= 2 && (() => {
-                            const last = weekProgress[weekProgress.length - 1][1];
-                            const prev = weekProgress[weekProgress.length - 2][1];
-                            const diff = last.maxWeight - prev.maxWeight;
-                            const msg = diff > 0 ? "Getting stronger." : diff === 0 ? "Same as last week. Try adding 5 lbs." : "Weight dipped. Rest and recover.";
-                            const color = diff > 0 ? "#00c805" : diff === 0 ? "#f0b429" : "#ff4444";
-                            return (
-                              <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(20,20,20,.98)", border: `1px solid ${diff > 0 ? "rgba(0,200,5,.2)" : diff === 0 ? "rgba(240,180,40,.2)" : "rgba(255,68,68,.2)"}`, marginBottom: 14 }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color, marginBottom: 3 }}>{msg}</div>
-                                {diff !== 0 && <div style={{ fontSize: 11, color: "#555555" }}>{diff > 0 ? `Up ${diff} lbs` : `Down ${Math.abs(diff)} lbs`} vs last week</div>}
-                              </div>
-                            );
-                          })()}
+                    {/* Level 3 — Summary slides in directly below */}
+                    {isSelected && (
+                      <div style={{ background: "rgba(10,10,10,.98)", borderTop: "1px solid rgba(0,200,5,.1)", borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,.04)", animation: "slideDown .2s ease" }}>
 
-                          {lastSession && (
-                            <div style={{ background: "rgba(20,20,20,.98)", borderRadius: 12, border: "1px solid rgba(255,255,255,.06)", padding: "12px 14px" }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Last session — {formatDate(lastSession.date)}</div>
-                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                {lastSession.sets.map((s, si) => (
-                                  <span key={si} style={{ fontSize: 12, color: "#00c805", background: "rgba(0,200,5,.08)", padding: "3px 10px", borderRadius: 20, fontWeight: 500 }}>{s.reps} x {s.weight} lbs</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                        {/* View tabs */}
+                        <div style={{ display: "flex", padding: "10px 12px", gap: 6, borderBottom: "1px solid rgba(255,255,255,.04)" }}>
+                          {[["overview","Overview"],["byweek","By Week"],["bysession","Sessions"]].map(([k, l]) => (
+                            <button key={k} onClick={() => setView(k)}
+                              style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 11, fontWeight: 600, background: view === k ? "rgba(255,255,255,.1)" : "rgba(20,20,20,.98)", color: view === k ? "#ffffff" : "#555555", transition: "all .18s" }}>
+                              {l}
+                            </button>
+                          ))}
                         </div>
-                      )}
 
-                      {/* BY WEEK */}
-                      {view === "byweek" && (
-                        <div>
-                          {weekProgress.length < 2 && <p style={{ color: "#555555", fontSize: 13 }}>Log at least 2 weeks to see trends.</p>}
-                          {dailyProgress.length > 0 && (() => {
-                            const BAR_COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0"];
-                            const svgW = 300, svgH = 160;
-                            const pad = { top: 18, right: 12, bottom: 38, left: 44 };
-                            const chartW = svgW - pad.left - pad.right;
-                            const chartH = svgH - pad.top - pad.bottom;
-                            const n = dailyProgress.length;
-                            const barW = Math.min(28, (chartW / Math.max(n,1)) * 0.6);
-                            const gap = chartW / Math.max(n,1);
-                            const yMax = maxDailyWeight * 1.2;
-                            return (
-                              <div style={{ marginBottom: 14 }}>
-                                <p style={{ fontSize: 10, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Max weight per session</p>
-                                <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
-                                  {Array.from({ length: 4 }, (_, ti) => {
-                                    const val = Math.round((yMax / 4) * (ti + 1));
-                                    const y = pad.top + chartH - (val / yMax) * chartH;
-                                    return (
-                                      <g key={ti}>
-                                        <line x1={pad.left} x2={pad.left + chartW} y1={y} y2={y} stroke="rgba(255,255,255,.05)" strokeWidth="1" strokeDasharray="3,3" />
-                                        <text x={pad.left - 5} y={y + 4} textAnchor="end" fontSize="8" fill="#444444" fontFamily="Poppins,sans-serif">{val}</text>
-                                      </g>
-                                    );
-                                  })}
-                                  <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top + chartH} stroke="rgba(255,255,255,.08)" strokeWidth="1" />
-                                  <line x1={pad.left} x2={pad.left + chartW} y1={pad.top + chartH} y2={pad.top + chartH} stroke="rgba(255,255,255,.08)" strokeWidth="1" />
-                                  {dailyProgress.map(([day, v], i) => {
-                                    const barH = Math.max(2, (v.maxWeight / yMax) * chartH);
-                                    const x = pad.left + gap * i + gap/2 - barW/2;
-                                    const y = pad.top + chartH - barH;
-                                    const isLatest = i === n - 1;
-                                    const d = new Date(day + "T12:00:00");
-                                    return (
-                                      <g key={day}>
-                                        <rect x={x} y={y} width={barW} height={barH} rx="3" fill={isLatest ? "#00c805" : BAR_COLORS[i % BAR_COLORS.length]} opacity={isLatest ? 1 : 0.5} />
-                                        <text x={x + barW/2} y={pad.top + chartH + 12} textAnchor="middle" fontSize="7" fill={isLatest ? "#00c805" : "#444444"} fontFamily="Poppins,sans-serif">{`${d.getMonth()+1}/${d.getDate()}`}</text>
-                                        <text x={x + barW/2} y={y - 4} textAnchor="middle" fontSize="7" fill={isLatest ? "#00c805" : "#555555"} fontFamily="Poppins,sans-serif">{v.maxWeight}</text>
-                                      </g>
-                                    );
-                                  })}
-                                </svg>
-                              </div>
-                            );
-                          })()}
-                          {weekProgress.length >= 2 && (() => {
-                            const last = weekProgress[weekProgress.length - 1][1];
-                            const prev = weekProgress[weekProgress.length - 2][1];
-                            const diff = last.maxWeight - prev.maxWeight;
-                            return (
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        <div style={{ padding: "16px 14px" }}>
+
+                          {/* OVERVIEW */}
+                          {view === "overview" && (
+                            <div>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
                                 {[
-                                  { label: "This Week Best", val: `${last.maxWeight} lbs`, diff },
-                                  { label: "Last Week Best", val: `${prev.maxWeight} lbs`, diff: null },
+                                  { label: "All Time Best", val: `${allTimeMax} lbs`, sub: "heaviest lift ever", color: "#f0b429" },
+                                  { label: "Times Trained", val: sessions.length, sub: "sessions logged", color: "#ffffff" },
+                                  { label: "Last Trained", val: lastSession ? formatDate(lastSession.date) : "--", sub: "", color: "#cccccc", small: true },
+                                  { label: "Last Best", val: `${lastSession?.maxWeight || 0} lbs`, sub: "most recent session", color: "#00c805" },
                                 ].map(c => (
-                                  <div key={c.label} style={{ background: "rgba(20,20,20,.98)", borderRadius: 12, border: "1px solid rgba(255,255,255,.06)", padding: "12px 12px" }}>
-                                    <div style={{ fontSize: 9, fontWeight: 700, color: "#555555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{c.label}</div>
-                                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff", marginBottom: 3 }}>{c.val}</div>
-                                    {c.diff !== null && <div style={{ fontSize: 11, color: c.diff >= 0 ? "#00c805" : "#ff4444", fontWeight: 600 }}>{c.diff >= 0 ? `+${c.diff}` : c.diff} lbs</div>}
+                                  <div key={c.label} style={{ background: "rgba(20,20,20,.98)", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "12px 12px" }}>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: "#444444", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
+                                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: c.small ? 13 : 20, fontWeight: 700, color: c.color, lineHeight: 1, marginBottom: 3 }}>{c.val}</div>
+                                    {c.sub && <div style={{ fontSize: 10, color: "#444444" }}>{c.sub}</div>}
                                   </div>
                                 ))}
                               </div>
-                            );
-                          })()}
-                        </div>
-                      )}
 
-                      {/* BY SESSION */}
-                      {view === "bysession" && (
-                        <div>
-                          {sessions.length === 0 && <p style={{ color: "#555555", fontSize: 13 }}>No sessions yet.</p>}
-                          {sessions.map((s, si) => (
-                            <div key={s.id || si} style={{ marginBottom: 6 }}>
-                              <button onClick={() => setExpandedSession(expandedSession === si ? null : si)}
-                                style={{ width: "100%", padding: "12px 14px", border: "none", background: expandedSession === si ? "rgba(0,200,5,.06)" : "rgba(20,20,20,.98)", borderRadius: expandedSession === si ? "10px 10px 0 0" : 10, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div style={{ textAlign: "left" }}>
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>{formatDate(s.date)}</div>
-                                  <div style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{s.sets.length} sets · Best {s.maxWeight} lbs · {s.totalReps} reps</div>
-                                </div>
-                                <span style={{ color: "#444444", fontSize: 12 }}>{expandedSession === si ? "▲" : "▼"}</span>
-                              </button>
-                              {expandedSession === si && (
-                                <div style={{ background: "rgba(14,14,14,.98)", borderRadius: "0 0 10px 10px", padding: "10px 14px" }}>
-                                  {s.sets.map((set, ssi) => (
-                                    <div key={ssi} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: ssi < s.sets.length - 1 ? "1px solid rgba(255,255,255,.04)" : "none" }}>
-                                      <span style={{ fontSize: 12, color: "#555555" }}>Set {ssi + 1}</span>
-                                      <span style={{ fontSize: 12, color: "#ffffff", fontWeight: 600 }}>{set.reps} reps</span>
-                                      <span style={{ fontSize: 12, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff", fontWeight: set.weight === s.maxWeight ? 700 : 500 }}>{set.weight} lbs</span>
-                                      <span style={{ fontSize: 12, color: "#444444" }}>{set.reps * set.weight} total</span>
-                                    </div>
-                                  ))}
+                              {weekProgress.length >= 2 && (() => {
+                                const last = weekProgress[weekProgress.length - 1][1];
+                                const prev = weekProgress[weekProgress.length - 2][1];
+                                const diff = last.maxWeight - prev.maxWeight;
+                                const msg = diff > 0 ? `Up ${diff} lbs from last week. Keep pushing.` : diff === 0 ? `Same weight as last week. Try adding 5 lbs.` : `Down ${Math.abs(diff)} lbs. Rest and come back stronger.`;
+                                const color = diff > 0 ? "#00c805" : diff === 0 ? "#f0b429" : "#ff4444";
+                                const borderColor = diff > 0 ? "rgba(0,200,5,.2)" : diff === 0 ? "rgba(240,180,40,.2)" : "rgba(255,68,68,.2)";
+                                return (
+                                  <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(20,20,20,.98)", border: `1px solid ${borderColor}`, marginBottom: 12 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color, lineHeight: 1.5 }}>{msg}</div>
+                                  </div>
+                                );
+                              })()}
+
+                              {lastSession && (
+                                <div style={{ background: "rgba(20,20,20,.98)", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "12px 14px" }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: "#444444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Last session</div>
+                                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                    {lastSession.sets.map((s, si) => (
+                                      <span key={si} style={{ fontSize: 12, color: "#00c805", background: "rgba(0,200,5,.08)", padding: "3px 10px", borderRadius: 20, fontWeight: 500 }}>
+                                        {s.reps} x {s.weight} lbs
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                          )}
 
-      {/* Overall stats — bottom */}
-      {workouts.length > 0 && (
-        <div style={{ marginTop: 28 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: "#444444", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>Your Overall Stats</p>
-          {(() => {
-            const totalRepsAll = workouts.reduce((sum, w) => sum + (Array.isArray(w.sets) ? w.sets : []).reduce((s2, s) => s2 + s.reps, 0), 0);
-            const groupCount = {};
-            workouts.forEach(w => {
-              const area = getBodyArea(w.exercise);
-              groupCount[area] = (groupCount[area] || 0) + 1;
-            });
-            const maxCnt = Math.max(...Object.values(groupCount), 1);
-            return (
-              <div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                  {[
-                    { label: "Times Trained", val: workouts.length, sub: "total sessions" },
-                    { label: "Total Reps", val: totalRepsAll.toLocaleString(), sub: "reps all time" },
-                  ].map(c => (
-                    <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "#444444", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
-                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>{c.val}</div>
-                      <div style={{ fontSize: 10, color: "#444444" }}>{c.sub}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ background: "rgba(18,18,18,.98)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 14px" }}>
-                  <p style={{ fontSize: 9, fontWeight: 700, color: "#444444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Training split</p>
-                  {Object.entries(groupCount).sort((a,b) => b[1]-a[1]).map(([area, cnt]) => (
-                    <div key={area} style={{ marginBottom: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, color: "#aaaaaa" }}>{area}</span>
-                        <span style={{ fontSize: 12, color: "#444444" }}>{cnt}</span>
+                          {/* BY WEEK */}
+                          {view === "byweek" && (
+                            <div>
+                              {dailyProgress.length === 0 && <p style={{ color: "#444444", fontSize: 13 }}>No data yet.</p>}
+                              {dailyProgress.length > 0 && (() => {
+                                const COLORS = ["#a8c8ff","#b8e0a8","#f0d080","#f0a8c8","#a8e0f0","#d0a8f0"];
+                                const W = 300, H = 160;
+                                const pad = { top: 18, right: 10, bottom: 36, left: 42 };
+                                const cW = W - pad.left - pad.right;
+                                const cH = H - pad.top - pad.bottom;
+                                const n = dailyProgress.length;
+                                const bW = Math.min(28, (cW / Math.max(n,1)) * 0.6);
+                                const gap = cW / Math.max(n,1);
+                                const yMax = maxDailyWeight * 1.2;
+                                return (
+                                  <div style={{ marginBottom: 14 }}>
+                                    <p style={{ fontSize: 10, fontWeight: 700, color: "#444444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Heaviest weight per session (lbs)</p>
+                                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: "visible" }}>
+                                      {[1,2,3,4].map(ti => {
+                                        const val = Math.round((yMax / 4) * ti);
+                                        const y = pad.top + cH - (val / yMax) * cH;
+                                        return (
+                                          <g key={ti}>
+                                            <line x1={pad.left} x2={pad.left+cW} y1={y} y2={y} stroke="rgba(255,255,255,.05)" strokeWidth="1" strokeDasharray="3,3"/>
+                                            <text x={pad.left-5} y={y+4} textAnchor="end" fontSize="8" fill="#444444" fontFamily="Poppins,sans-serif">{val}</text>
+                                          </g>
+                                        );
+                                      })}
+                                      <line x1={pad.left} x2={pad.left} y1={pad.top} y2={pad.top+cH} stroke="rgba(255,255,255,.08)" strokeWidth="1"/>
+                                      <line x1={pad.left} x2={pad.left+cW} y1={pad.top+cH} y2={pad.top+cH} stroke="rgba(255,255,255,.08)" strokeWidth="1"/>
+                                      {dailyProgress.map(([day, v], di) => {
+                                        const bH = Math.max(2, (v.maxWeight/yMax)*cH);
+                                        const x = pad.left + gap*di + gap/2 - bW/2;
+                                        const y = pad.top + cH - bH;
+                                        const isLatest = di === n-1;
+                                        const d = new Date(day+"T12:00:00");
+                                        return (
+                                          <g key={day}>
+                                            <rect x={x} y={y} width={bW} height={bH} rx="3" fill={isLatest ? "#00c805" : COLORS[di % COLORS.length]} opacity={isLatest ? 1 : 0.55}/>
+                                            <text x={x+bW/2} y={pad.top+cH+12} textAnchor="middle" fontSize="7" fill={isLatest ? "#00c805" : "#444444"} fontFamily="Poppins,sans-serif">{`${d.getMonth()+1}/${d.getDate()}`}</text>
+                                            <text x={x+bW/2} y={y-4} textAnchor="middle" fontSize="7" fill={isLatest ? "#00c805" : "#555555"} fontFamily="Poppins,sans-serif">{v.maxWeight}</text>
+                                          </g>
+                                        );
+                                      })}
+                                    </svg>
+                                  </div>
+                                );
+                              })()}
+                              {weekProgress.length >= 2 && (() => {
+                                const last = weekProgress[weekProgress.length-1][1];
+                                const prev = weekProgress[weekProgress.length-2][1];
+                                const diff = last.maxWeight - prev.maxWeight;
+                                return (
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                    {[
+                                      { label: "This Week", val: `${last.maxWeight} lbs` },
+                                      { label: "Last Week", val: `${prev.maxWeight} lbs` },
+                                    ].map(c => (
+                                      <div key={c.label} style={{ background: "rgba(20,20,20,.98)", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "12px 12px" }}>
+                                        <div style={{ fontSize: 9, fontWeight: 700, color: "#444444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{c.label}</div>
+                                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>{c.val}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+
+                          {/* SESSIONS */}
+                          {view === "bysession" && (
+                            <div>
+                              {sessions.length === 0 && <p style={{ color: "#444444", fontSize: 13 }}>No sessions yet.</p>}
+                              {sessions.map((s, si) => (
+                                <div key={s.id || si} style={{ marginBottom: 6 }}>
+                                  <button onClick={() => setExpandedSession(expandedSession === si ? null : si)}
+                                    style={{ width: "100%", padding: "12px 12px", border: "none", background: expandedSession === si ? "rgba(0,200,5,.06)" : "rgba(20,20,20,.98)", borderRadius: expandedSession === si ? "10px 10px 0 0" : 10, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div style={{ textAlign: "left" }}>
+                                      <div style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>{formatDate(s.date)}</div>
+                                      <div style={{ fontSize: 11, color: "#444444", marginTop: 2 }}>{s.sets.length} sets &middot; Best {s.maxWeight} lbs &middot; {s.totalReps} reps</div>
+                                    </div>
+                                    <span style={{ color: "#333333", fontSize: 11 }}>{expandedSession === si ? "▲" : "▼"}</span>
+                                  </button>
+                                  {expandedSession === si && (
+                                    <div style={{ background: "rgba(14,14,14,.98)", borderRadius: "0 0 10px 10px", padding: "10px 12px" }}>
+                                      {s.sets.map((set, ssi) => (
+                                        <div key={ssi} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: ssi < s.sets.length-1 ? "1px solid rgba(255,255,255,.04)" : "none" }}>
+                                          <span style={{ fontSize: 12, color: "#444444" }}>Set {ssi+1}</span>
+                                          <span style={{ fontSize: 12, fontWeight: 600, color: "#ffffff" }}>{set.reps} reps</span>
+                                          <span style={{ fontSize: 12, fontWeight: set.weight === s.maxWeight ? 700 : 500, color: set.weight === s.maxWeight ? "#f0b429" : "#ffffff" }}>{set.weight} lbs</span>
+                                          <span style={{ fontSize: 12, color: "#333333" }}>{set.reps * set.weight}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                        </div>
                       </div>
-                      <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 100, height: 4, overflow: "hidden" }}>
-                        <div style={{ width: `${(cnt/maxCnt)*100}%`, height: "100%", background: "#00c805", borderRadius: 100 }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Overall stats */}
+          <div style={{ marginTop: 24 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#333333", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>Overall Stats</p>
+            {(() => {
+              const totalReps = workouts.reduce((sum, w) => sum + (Array.isArray(w.sets) ? w.sets : []).reduce((s2, s) => s2 + s.reps, 0), 0);
+              const areaCounts = {};
+              workouts.forEach(w => {
+                const a = getBodyArea(w.exercise);
+                areaCounts[a] = (areaCounts[a] || 0) + 1;
+              });
+              const maxC = Math.max(...Object.values(areaCounts), 1);
+              return (
+                <div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                    {[
+                      { label: "Sessions", val: workouts.length, sub: "total logged" },
+                      { label: "Total Reps", val: totalReps.toLocaleString(), sub: "all time" },
+                    ].map(c => (
+                      <div key={c.label} style={{ background: "rgba(18,18,18,.98)", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "12px 12px" }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "#333333", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" }}>{c.label}</div>
+                        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>{c.val}</div>
+                        <div style={{ fontSize: 10, color: "#333333" }}>{c.sub}</div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <div style={{ background: "rgba(18,18,18,.98)", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "12px 14px" }}>
+                    <p style={{ fontSize: 9, fontWeight: 700, color: "#333333", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Training Split</p>
+                    {Object.entries(areaCounts).sort((a,b) => b[1]-a[1]).map(([area, cnt]) => (
+                      <div key={area} style={{ marginBottom: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 12, color: "#aaaaaa" }}>{area}</span>
+                          <span style={{ fontSize: 12, color: "#444444" }}>{cnt} session{cnt !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 100, height: 4, overflow: "hidden" }}>
+                          <div style={{ width: `${(cnt/maxC)*100}%`, height: "100%", background: "#00c805", borderRadius: 100 }}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
-        </div>
+              );
+            })()}
+          </div>
+        </>
       )}
     </div>
   );
@@ -1839,12 +1871,6 @@ export default function App() {
             <ProgressTab
               workouts={workouts}
               categories={categories}
-              activeExercise={activeExercise}
-              setActiveExercise={setActiveExercise}
-              weekProgress={weekProgress}
-              dailyProgress={dailyProgress}
-              maxVol={maxVol}
-              maxDailyWeight={maxDailyWeight}
             />
           )}
 
