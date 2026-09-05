@@ -606,6 +606,8 @@ function AccountSettingsModal({ user, onUpdate, onClose }) {
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
+  const [editingGoal, setEditingGoal] = useState(false);
+
   const saveChanges = async () => {
     setMsg(""); setError("");
     if (newPassword && newPassword !== confirmPassword) { setError("Passwords do not match."); return; }
@@ -655,6 +657,23 @@ function AccountSettingsModal({ user, onUpdate, onClose }) {
 
         {error && <div className="err-box" style={{ marginBottom: 14 }}>{error}</div>}
         {msg && <div style={{ background: "rgba(0,200,5,.12)", border: "1.5px solid rgba(100,200,130,.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#2a7040" }}>{msg}</div>}
+
+        {/* Goal section */}
+        <div style={{ marginBottom: 20, padding: "16px", background: "rgba(255,255,255,.04)", borderRadius: 14, border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <label className="lbl" style={{ marginBottom: 0 }}>Training Goal</label>
+            <button onClick={() => setEditingGoal(true)}
+              style={{ background: "none", border: "1px solid rgba(0,200,5,.3)", borderRadius: 8, padding: "4px 12px", fontFamily: "'Poppins',sans-serif", fontSize: 12, color: "#00c805", cursor: "pointer" }}>
+              Change
+            </button>
+          </div>
+          <p style={{ fontSize: 14, color: "#ffffff", fontWeight: 600 }}>
+            {user.goal ? GOALS.find(g => g.key === user.goal)?.label || user.goal : "Not set"}
+          </p>
+          {user.goal === "improve_area" && user.focus_areas?.length > 0 && (
+            <p style={{ fontSize: 12, color: "#666666", marginTop: 4 }}>Focus: {user.focus_areas.join(", ")}</p>
+          )}
+        </div>
 
         <button onClick={saveChanges} disabled={saving} className="save-btn">
           {saving ? "Saving..." : "Save Changes"}
@@ -722,6 +741,300 @@ function EditWorkoutModal({ workout, onSave, onDelete, onClose }) {
           Delete Workout
         </button>
       </div>
+    </div>
+  );
+}
+
+
+// ─── Goal Onboarding ──────────────────────────────────────────────────────────
+const GOALS = [
+  {
+    key: "build_muscle",
+    label: "Build Muscle",
+    description: "Focuses on gradually increasing the training stimulus to support muscle growth. Recommendations may emphasize reps, productive training volume, consistency, and progressive overload.",
+    note: "Building muscle does not automatically mean becoming bulky. Muscle growth is gradual and depends on your training, nutrition, genetics, and overall goals."
+  },
+  {
+    key: "gain_strength",
+    label: "Gain Strength",
+    description: "Focuses on improving how much force you can produce. Recommendations will place more emphasis on weight progression, estimated strength, and performance at similar rep ranges."
+  },
+  {
+    key: "general_fitness",
+    label: "General Fitness",
+    description: "Focuses on consistent, well-rounded training rather than maximizing one specific outcome. Recommendations prioritize consistency and overall training patterns without aggressively pushing weight or volume increases."
+  },
+  {
+    key: "maintain",
+    label: "Maintain Current Fitness",
+    description: "Focuses on preserving current strength and training consistency. Stable performance may be considered successful rather than something that always needs to increase."
+  },
+  {
+    key: "improve_area",
+    label: "Improve a Specific Body Area",
+    description: "Focuses coaching more closely on selected muscle groups such as glutes, legs, back, chest, shoulders, arms, or core."
+  },
+  {
+    key: "not_sure",
+    label: "Not Sure Yet",
+    description: "Iron Log will still track your progress and give balanced recommendations, but the coaching will be less specialized until you choose a more specific goal."
+  }
+];
+
+const FOCUS_AREAS = ["Glutes","Legs","Chest","Back","Shoulders","Arms","Core"];
+
+const HELP_QUESTIONS = [
+  {
+    q: "What would you most like to improve?",
+    options: [
+      { label: "How my body looks / muscle development", maps: "build_muscle" },
+      { label: "How much I can lift", maps: "gain_strength" },
+      { label: "Overall health and consistency", maps: "general_fitness" },
+      { label: "Keep what I currently have", maps: "maintain" },
+      { label: "A specific body area", maps: "improve_area" },
+      { label: "I genuinely do not know", maps: "not_sure" }
+    ]
+  },
+  {
+    q: "Which statement sounds closest to you?",
+    options: [
+      { label: "I want to see visible muscle development", maps: "build_muscle" },
+      { label: "I want my lifts to get stronger", maps: "gain_strength" },
+      { label: "I mainly want to stay active and improve gradually", maps: "general_fitness" },
+      { label: "I am happy with my current progress and want to maintain it", maps: "maintain" },
+      { label: "I want to focus on one or more specific areas of my body", maps: "improve_area" },
+      { label: "None of the above really fit", maps: "not_sure" }
+    ]
+  }
+];
+
+function GoalOnboarding({ user, onComplete }) {
+  const [screen, setScreen] = useState("main"); // main | help | focus | confirm
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [selectedAreas, setSelectedAreas] = useState([]);
+  const [helpAnswers, setHelpAnswers] = useState([]);
+  const [helpStep, setHelpStep] = useState(0);
+  const [suggested, setSuggested] = useState(null);
+  const [disclaimer, setDisclaimer] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [expandedGoal, setExpandedGoal] = useState(null);
+
+  // Tally help answers to suggest a goal
+  const computeSuggestion = (answers) => {
+    const tally = {};
+    answers.forEach(a => { tally[a] = (tally[a] || 0) + 1; });
+    return Object.entries(tally).sort((a,b) => b[1]-a[1])[0]?.[0] || "not_sure";
+  };
+
+  const handleHelpAnswer = (maps) => {
+    const newAnswers = [...helpAnswers, maps];
+    if (helpStep < HELP_QUESTIONS.length - 1) {
+      setHelpAnswers(newAnswers);
+      setHelpStep(helpStep + 1);
+    } else {
+      const suggestion = computeSuggestion(newAnswers);
+      setSuggested(suggestion);
+      setSelectedGoal(suggestion);
+      setScreen("main");
+    }
+  };
+
+  const handleGoalSelect = (key) => {
+    setSelectedGoal(key);
+    setExpandedGoal(key);
+  };
+
+  const handleContinue = () => {
+    if (!selectedGoal) return;
+    if (selectedGoal === "improve_area") { setScreen("focus"); return; }
+    setScreen("confirm");
+  };
+
+  const handleSave = async () => {
+    if (!disclaimer) return;
+    setSaving(true);
+    try {
+      const updates = { goal: selectedGoal };
+      if (selectedGoal === "improve_area") updates.focus_areas = selectedAreas;
+      else updates.focus_areas = null;
+      await supabase.from("users").update(updates).eq("id", user.id);
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem("iron_log_user", JSON.stringify(updatedUser));
+      onComplete(updatedUser);
+    } catch (e) { alert("Error saving goal. Please try again."); }
+    setSaving(false);
+  };
+
+  const goalObj = GOALS.find(g => g.key === selectedGoal);
+
+  // ── Help Me Choose screen ──
+  if (screen === "help") {
+    const q = HELP_QUESTIONS[helpStep];
+    return (
+      <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", color: "#ffffff", padding: "48px 24px" }}>
+        <style>{STYLES}</style>
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <button onClick={() => { setScreen("main"); setHelpStep(0); setHelpAnswers([]); }}
+            style={{ background: "none", border: "none", color: "#555555", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, marginBottom: 32, padding: 0 }}>
+            ← Back
+          </button>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#00c805", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+            Question {helpStep + 1} of {HELP_QUESTIONS.length}
+          </p>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 22, fontWeight: 700, color: "#ffffff", marginBottom: 28, lineHeight: 1.3 }}>{q.q}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {q.options.map((opt, i) => (
+              <button key={i} onClick={() => handleHelpAnswer(opt.maps)}
+                style={{ padding: "16px 18px", borderRadius: 14, border: "1.5px solid rgba(255,255,255,.1)", background: "rgba(22,22,22,.98)", color: "#dddddd", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 500, cursor: "pointer", textAlign: "left", transition: "all .2s" }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Focus areas screen ──
+  if (screen === "focus") {
+    return (
+      <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", color: "#ffffff", padding: "48px 24px" }}>
+        <style>{STYLES}</style>
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <button onClick={() => setScreen("main")}
+            style={{ background: "none", border: "none", color: "#555555", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, marginBottom: 32, padding: 0 }}>
+            ← Back
+          </button>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 26, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>Which areas?</p>
+          <p style={{ fontSize: 14, color: "#666666", marginBottom: 28, lineHeight: 1.6 }}>Select one or more areas you want to focus on. You can change these later.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 32 }}>
+            {FOCUS_AREAS.map(area => {
+              const on = selectedAreas.includes(area);
+              return (
+                <button key={area} onClick={() => setSelectedAreas(prev => on ? prev.filter(a => a !== area) : [...prev, area])}
+                  style={{ padding: "12px 18px", borderRadius: 12, border: `1.5px solid ${on ? "#00c805" : "rgba(255,255,255,.1)"}`, background: on ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: on ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                  {area}
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={() => { if (selectedAreas.length > 0) setScreen("confirm"); }}
+            disabled={selectedAreas.length === 0}
+            style={{ background: selectedAreas.length > 0 ? "#00c805" : "rgba(255,255,255,.08)", border: "none", borderRadius: 14, padding: "16px", fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: selectedAreas.length > 0 ? "pointer" : "default", color: selectedAreas.length > 0 ? "#000000" : "#333333", width: "100%" }}>
+            Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Confirm + disclaimer screen ──
+  if (screen === "confirm") {
+    return (
+      <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", color: "#ffffff", padding: "48px 24px" }}>
+        <style>{STYLES}</style>
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <button onClick={() => setScreen(selectedGoal === "improve_area" ? "focus" : "main")}
+            style={{ background: "none", border: "none", color: "#555555", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, marginBottom: 32, padding: 0 }}>
+            ← Back
+          </button>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 26, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>Your goal</p>
+          <div style={{ background: "rgba(0,200,5,.08)", border: "1.5px solid rgba(0,200,5,.25)", borderRadius: 16, padding: "18px 20px", marginBottom: 20 }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#00c805", marginBottom: 6 }}>{goalObj?.label}</p>
+            {selectedGoal === "improve_area" && selectedAreas.length > 0 && (
+              <p style={{ fontSize: 13, color: "#888888" }}>Focus areas: {selectedAreas.join(", ")}</p>
+            )}
+          </div>
+
+          {/* Disclaimer */}
+          <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: "16px 18px", marginBottom: 24 }}>
+            <p style={{ fontSize: 12, color: "#888888", lineHeight: 1.7 }}>
+              Iron Log uses your workout history and selected goal to provide training insights and general fitness recommendations. These insights are educational and are not medical advice or a substitute for guidance from a qualified healthcare or fitness professional. Training needs vary based on experience, health, recovery, injuries, and other individual factors.
+            </p>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginTop: 16 }}>
+              <button onClick={() => setDisclaimer(!disclaimer)}
+                style={{ width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${disclaimer ? "#00c805" : "rgba(255,255,255,.2)"}`, background: disclaimer ? "#00c805" : "transparent", flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                {disclaimer && <span style={{ color: "#000", fontSize: 13, fontWeight: 700 }}>✓</span>}
+              </button>
+              <p style={{ fontSize: 12, color: "#888888", lineHeight: 1.6, cursor: "pointer" }} onClick={() => setDisclaimer(!disclaimer)}>
+                I understand that Iron Log's recommendations are for general guidance only and not professional medical or fitness advice.
+              </p>
+            </div>
+          </div>
+
+          <button onClick={handleSave} disabled={!disclaimer || saving}
+            style={{ background: disclaimer ? "#00c805" : "rgba(255,255,255,.08)", border: "none", borderRadius: 14, padding: "16px", fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: disclaimer ? "pointer" : "default", color: disclaimer ? "#000000" : "#333333", width: "100%", marginBottom: 12 }}>
+            {saving ? "Saving..." : "Start using Iron Log"}
+          </button>
+          <button onClick={() => setScreen("main")}
+            style={{ background: "none", border: "none", color: "#555555", fontFamily: "'Poppins',sans-serif", fontSize: 13, cursor: "pointer", width: "100%", padding: "8px 0" }}>
+            Choose a different goal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main goal selection screen ──
+  return (
+    <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", color: "#ffffff", padding: "48px 24px 80px" }}>
+      <style>{STYLES}</style>
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#00c805", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Welcome, {user.username}</p>
+        <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 28, fontWeight: 700, color: "#ffffff", marginBottom: 8, lineHeight: 1.2 }}>What is your primary training goal?</p>
+        <p style={{ fontSize: 14, color: "#666666", marginBottom: 8, lineHeight: 1.6 }}>This helps Iron Log give you more relevant coaching. You can change it anytime in settings.</p>
+
+        {suggested && (
+          <div style={{ background: "rgba(0,200,5,.06)", border: "1px solid rgba(0,200,5,.15)", borderRadius: 12, padding: "10px 14px", marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: "#00c805" }}>Based on your answers, <strong>{GOALS.find(g=>g.key===suggested)?.label}</strong> may be the best fit.</p>
+          </div>
+        )}
+
+        <button onClick={() => { setScreen("help"); setHelpStep(0); setHelpAnswers([]); setSuggested(null); }}
+          style={{ background: "none", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 12, padding: "10px 16px", fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#888888", cursor: "pointer", marginBottom: 24 }}>
+          Help me choose
+        </button>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+          {GOALS.map(g => {
+            const isSelected = selectedGoal === g.key;
+            const isExpanded = expandedGoal === g.key;
+            return (
+              <div key={g.key} style={{ borderRadius: 14, border: `1.5px solid ${isSelected ? "#00c805" : "rgba(255,255,255,.08)"}`, background: isSelected ? "rgba(0,200,5,.07)" : "rgba(18,18,18,.98)", overflow: "hidden", transition: "border-color .2s" }}>
+                <button onClick={() => handleGoalSelect(g.key)}
+                  style={{ width: "100%", padding: "16px 18px", border: "none", background: "transparent", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", textAlign: "left" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${isSelected ? "#00c805" : "rgba(255,255,255,.2)"}`, background: isSelected ? "#00c805" : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {isSelected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#000" }} />}
+                    </div>
+                    <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 600, color: isSelected ? "#00c805" : "#ffffff" }}>{g.label}</span>
+                  </div>
+                  <span style={{ color: "#333333", fontSize: 12, marginLeft: 8 }}>{isExpanded ? "▲" : "▼"}</span>
+                </button>
+                {isExpanded && (
+                  <div style={{ padding: "0 18px 16px 50px" }}>
+                    <p style={{ fontSize: 13, color: "#888888", lineHeight: 1.7, marginBottom: g.note ? 10 : 0 }}>{g.description}</p>
+                    {g.note && <p style={{ fontSize: 12, color: "#555555", fontStyle: "italic", lineHeight: 1.6 }}>{g.note}</p>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <button onClick={handleContinue} disabled={!selectedGoal}
+          style={{ background: selectedGoal ? "#00c805" : "rgba(255,255,255,.08)", border: "none", borderRadius: 14, padding: "16px", fontFamily: "'Poppins',sans-serif", fontSize: 15, fontWeight: 700, cursor: selectedGoal ? "pointer" : "default", color: selectedGoal ? "#000000" : "#333333", width: "100%" }}>
+          Continue
+        </button>
+      </div>
+      {editingGoal && (
+        <div className="overlay" style={{ zIndex: 200 }}>
+          <GoalOnboarding user={user} onComplete={(updatedUser) => {
+            onUpdate(updatedUser);
+            setEditingGoal(false);
+          }} />
+        </div>
+      )}
     </div>
   );
 }
@@ -913,11 +1226,15 @@ function ProgressTab({ workouts, categories }) {
     workouts.filter(w => w.exercise === selectedExercise).forEach(w => {
       const dt = new Date(w.date), day = dt.getDay();
       const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
-      const wk = new Date(dt.setDate(diff)).toISOString().split("T")[0];
-      if (!byWeek[wk]) byWeek[wk] = { maxWeight: 0 };
-      (Array.isArray(w.sets) ? w.sets : []).forEach(s => {
-        byWeek[wk].maxWeight = Math.max(byWeek[wk].maxWeight, s.weight || 0);
-      });
+      const wk = new Date(new Date(w.date).setDate(new Date(w.date).getDate() - day + (day === 0 ? -6 : 1))).toISOString().split("T")[0];
+      const sets = Array.isArray(w.sets) ? w.sets : [];
+      const stats = calcSessionStats(sets);
+      if (!byWeek[wk]) byWeek[wk] = { maxWeight: 0, totalReps: 0, totalVolume: 0 };
+      if (stats) {
+        byWeek[wk].maxWeight = Math.max(byWeek[wk].maxWeight, stats.maxWeight || 0);
+        byWeek[wk].totalReps += stats.totalReps || 0;
+        byWeek[wk].totalVolume += stats.totalVolume || 0;
+      }
     });
     return Object.entries(byWeek).sort((a, b) => a[0].localeCompare(b[0]));
   }, [workouts, selectedExercise]);
@@ -926,10 +1243,14 @@ function ProgressTab({ workouts, categories }) {
     if (!selectedExercise) return [];
     const byDay = {};
     workouts.filter(w => w.exercise === selectedExercise).forEach(w => {
-      if (!byDay[w.date]) byDay[w.date] = { maxWeight: 0 };
-      (Array.isArray(w.sets) ? w.sets : []).forEach(s => {
-        byDay[w.date].maxWeight = Math.max(byDay[w.date].maxWeight, s.weight || 0);
-      });
+      const sets = Array.isArray(w.sets) ? w.sets : [];
+      const stats = calcSessionStats(sets);
+      if (!byDay[w.date]) byDay[w.date] = { maxWeight: 0, totalReps: 0, totalVolume: 0 };
+      if (stats) {
+        byDay[w.date].maxWeight = Math.max(byDay[w.date].maxWeight, stats.maxWeight || 0);
+        byDay[w.date].totalReps += stats.totalReps || 0;
+        byDay[w.date].totalVolume += stats.totalVolume || 0;
+      }
     });
     return Object.entries(byDay).sort((a, b) => a[0].localeCompare(b[0]));
   }, [workouts, selectedExercise]);
@@ -1498,6 +1819,320 @@ function AboutTab() {
   );
 }
 
+
+// ─── Training Analysis Helpers ────────────────────────────────────────────────
+
+// Merge multiple workout rows for the same exercise + date into one session
+function mergeSessionsByDate(workouts, exerciseName) {
+  const byDate = {};
+  workouts
+    .filter(w => w.exercise === exerciseName)
+    .forEach(w => {
+      const sets = Array.isArray(w.sets) ? w.sets : [];
+      if (!byDate[w.date]) byDate[w.date] = [];
+      byDate[w.date].push(...sets);
+    });
+  return Object.entries(byDate)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, sets]) => ({ date, sets }));
+}
+
+// Calculate stats for one merged session
+function calcSessionStats(sets) {
+  const validWeighted = sets.filter(s => s.reps > 0 && s.weight > 0);
+  const validBodyweight = sets.filter(s => s.reps > 0 && (!s.weight || s.weight === 0));
+  const isBodyweight = validWeighted.length === 0 && validBodyweight.length > 0;
+
+  if (isBodyweight) {
+    const totalReps = validBodyweight.reduce((sum, s) => sum + s.reps, 0);
+    return {
+      maxWeight: null,
+      totalReps,
+      totalVolume: null,
+      estimated1RM: null,
+      method: "bodyweight_progression"
+    };
+  }
+
+  if (validWeighted.length === 0) return null;
+
+  const maxWeight = Math.max(...validWeighted.map(s => s.weight));
+  const totalReps = validWeighted.reduce((sum, s) => sum + s.reps, 0);
+  const totalVolume = validWeighted.reduce((sum, s) => sum + s.weight * s.reps, 0);
+
+  // Epley 1RM for every valid set with reps 1-20
+  const oneRMs = validWeighted
+    .filter(s => s.reps >= 1 && s.reps <= 20)
+    .map(s => s.weight * (1 + s.reps / 30));
+  const estimated1RM = oneRMs.length > 0 ? Math.max(...oneRMs) : null;
+
+  return {
+    maxWeight,
+    totalReps,
+    totalVolume,
+    estimated1RM: estimated1RM !== null ? Math.round(estimated1RM * 10) / 10 : null,
+    method: "weighted"
+  };
+}
+
+// Get comparable-load reps: reps at weight within ±5% of target weight
+function getComparableReps(sets, targetWeight) {
+  const tolerance = targetWeight * 0.05;
+  const comparable = sets.filter(
+    s => s.reps > 0 && s.weight > 0 &&
+         Math.abs(s.weight - targetWeight) <= tolerance
+  );
+  if (comparable.length === 0) return null;
+  return comparable.reduce((sum, s) => sum + s.reps, 0) / comparable.length;
+}
+
+// Classify trend for one exercise across all workouts
+function getExerciseTrend(exerciseName, workouts) {
+  const mergedSessions = mergeSessionsByDate(workouts, exerciseName);
+  const sessionCount = mergedSessions.length;
+
+  // Eligibility check
+  if (sessionCount < 4) {
+    return { classification: "insufficient_data", reason: `Only ${sessionCount} session(s) logged. Need at least 4.`, confidence: "insufficient", sessionCount, daySpan: 0 };
+  }
+  const firstDate = new Date(mergedSessions[0].date);
+  const lastDate = new Date(mergedSessions[sessionCount - 1].date);
+  const daySpan = Math.round((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+  if (daySpan < 14) {
+    return { classification: "insufficient_data", reason: `Sessions span only ${daySpan} days. Need at least 14.`, confidence: "insufficient", sessionCount, daySpan };
+  }
+
+  // Calculate stats for each session
+  const sessions = mergedSessions.map(s => ({
+    date: s.date,
+    stats: calcSessionStats(s.sets),
+    sets: s.sets
+  })).filter(s => s.stats !== null);
+
+  if (sessions.length < 4) {
+    return { classification: "insufficient_data", reason: "Not enough valid sets across sessions.", confidence: "insufficient", sessionCount, daySpan };
+  }
+
+  const isBodyweight = sessions[0].stats.method === "bodyweight_progression";
+
+  // Take last 4 sessions
+  const last4 = sessions.slice(-4);
+  const earlier = last4.slice(0, 2);  // sessions 1 and 2
+  const recent  = last4.slice(2, 4);  // sessions 3 and 4
+
+  const avg = (arr, key) => {
+    const vals = arr.map(s => s.stats[key]).filter(v => v !== null && v !== undefined);
+    return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  };
+
+  const pctChange = (oldVal, newVal) => {
+    if (oldVal === null || newVal === null || oldVal === 0) return null;
+    return ((newVal - oldVal) / oldVal) * 100;
+  };
+
+  // --- Bodyweight path ---
+  if (isBodyweight) {
+    const earlierReps = avg(earlier, "totalReps");
+    const recentReps  = avg(recent,  "totalReps");
+    const repChange   = pctChange(earlierReps, recentReps);
+
+    let classification, reason;
+    if (repChange !== null && repChange >= 5) {
+      classification = "progressing";
+      reason = `Total reps up ${repChange.toFixed(1)}% (bodyweight progression)`;
+    } else if (repChange !== null && repChange <= -2) {
+      classification = "stable";
+      reason = `Reps slightly lower recently. Not enough evidence to flag a concern.`;
+    } else {
+      // Check plateau eligibility (5 sessions, 21 days)
+      if (sessionCount >= 5 && daySpan >= 21 && repChange !== null && Math.abs(repChange) < 2) {
+        classification = "possible_plateau";
+        reason = `Reps have been flat across the last 4 sessions (bodyweight exercise, ${daySpan} days).`;
+      } else {
+        classification = "stable";
+        reason = `Reps similar across sessions. Not enough history to confirm a plateau.`;
+      }
+    }
+    return {
+      classification, reason, confidence: "sufficient",
+      sessionCount, daySpan, method: "bodyweight_progression",
+      earlierReps: earlierReps?.toFixed(1), recentReps: recentReps?.toFixed(1),
+      repChangePct: repChange?.toFixed(1)
+    };
+  }
+
+  // --- Weighted path ---
+  const earlier1RM  = avg(earlier, "estimated1RM");
+  const recent1RM   = avg(recent,  "estimated1RM");
+  const oneRMChange = pctChange(earlier1RM, recent1RM);
+
+  // Comparable-load rep check: find most common weight in earlier baseline
+  const allEarlierSets = earlier.flatMap(s => s.sets.filter(st => st.reps > 0 && st.weight > 0));
+  const weightCounts = {};
+  allEarlierSets.forEach(s => { weightCounts[s.weight] = (weightCounts[s.weight] || 0) + 1; });
+  const referenceWeight = Object.entries(weightCounts).sort((a,b) => b[1]-a[1])[0]?.[0];
+
+  let compRepEarlier = null, compRepRecent = null, compRepChange = null;
+  if (referenceWeight) {
+    const refW = Number(referenceWeight);
+    compRepEarlier = earlier.reduce((sum, s) => {
+      const r = getComparableReps(s.sets, refW);
+      return r !== null ? sum + r : sum;
+    }, 0) / earlier.length;
+    compRepRecent = recent.reduce((sum, s) => {
+      const r = getComparableReps(s.sets, refW);
+      return r !== null ? sum + r : sum;
+    }, 0) / recent.length;
+    if (compRepEarlier > 0 && compRepRecent > 0) {
+      compRepChange = compRepRecent - compRepEarlier;
+    }
+  }
+
+  const earlierVol = avg(earlier, "totalVolume");
+  const recentVol  = avg(recent,  "totalVolume");
+  const volChange  = pctChange(earlierVol, recentVol);
+
+  // Classification logic
+  const meaningful1RMProgress = oneRMChange !== null && oneRMChange >= 2.5;
+  const meaningfulRepProgress = compRepChange !== null && compRepChange >= 1.0;
+  const anyPrimaryProgress = meaningful1RMProgress || meaningfulRepProgress;
+
+  const flat1RM  = oneRMChange === null || Math.abs(oneRMChange) < 2.5;
+  const flatReps = compRepChange === null || Math.abs(compRepChange) < 1.0;
+  const allPrimaryFlat = flat1RM && flatReps;
+
+  let classification, reason;
+
+  if (anyPrimaryProgress) {
+    classification = "progressing";
+    const parts = [];
+    if (meaningful1RMProgress) parts.push(`estimated 1RM up ${oneRMChange.toFixed(1)}%`);
+    if (meaningfulRepProgress) parts.push(`+${compRepChange.toFixed(1)} reps at ${referenceWeight} lbs`);
+    if (volChange !== null && volChange >= 3) parts.push(`volume up ${volChange.toFixed(1)}%`);
+    reason = parts.join("; ");
+  } else if (allPrimaryFlat && sessionCount >= 5 && daySpan >= 21) {
+    classification = "possible_plateau";
+    const parts = [];
+    if (oneRMChange !== null) parts.push(`estimated 1RM ${oneRMChange >= 0 ? "+" : ""}${oneRMChange.toFixed(1)}%`);
+    if (compRepChange !== null) parts.push(`comparable reps ${compRepChange >= 0 ? "+" : ""}${compRepChange.toFixed(1)}`);
+    if (volChange !== null) parts.push(`volume ${volChange >= 0 ? "+" : ""}${volChange.toFixed(1)}%`);
+    reason = `No meaningful improvement across primary evidence. ${parts.join("; ")}`;
+  } else {
+    classification = "stable";
+    const parts = [];
+    if (oneRMChange !== null) parts.push(`estimated 1RM ${oneRMChange >= 0 ? "+" : ""}${oneRMChange.toFixed(1)}%`);
+    if (compRepChange !== null) parts.push(`comparable reps ${compRepChange >= 0 ? "+" : ""}${compRepChange.toFixed(1)}`);
+    if (volChange !== null) parts.push(`volume ${volChange >= 0 ? "+" : ""}${volChange.toFixed(1)}%`);
+    reason = parts.length > 0 ? parts.join("; ") : "Mixed or inconclusive evidence";
+  }
+
+  return {
+    classification, reason, confidence: "sufficient",
+    sessionCount, daySpan, method: "weighted",
+    earlier1RM: earlier1RM?.toFixed(1), recent1RM: recent1RM?.toFixed(1),
+    oneRMChangePct: oneRMChange?.toFixed(1),
+    referenceWeight, compRepEarlier: compRepEarlier?.toFixed(1),
+    compRepRecent: compRepRecent?.toFixed(1), compRepChange: compRepChange?.toFixed(1),
+    earlierVol: earlierVol?.toFixed(0), recentVol: recentVol?.toFixed(0),
+    volChangePct: volChange?.toFixed(1)
+  };
+}
+
+// Muscle group balance report (last 28 days)
+function getMuscleBalanceReport(workouts, categories) {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+  const recentWorkouts = workouts.filter(w => new Date(w.date) >= cutoff);
+  const daySpan = workouts.length > 0
+    ? Math.round((now - new Date(workouts[workouts.length - 1]?.date)) / (1000*60*60*24))
+    : 0;
+
+  if (recentWorkouts.length < 8 || daySpan < 21) {
+    return { hasEnoughHistory: false, reason: "Not enough training history yet to evaluate muscle-group balance." };
+  }
+
+  const groupCount = {};
+  const getCategory = (ex) => {
+    for (const [cat, exs] of Object.entries(categories)) {
+      if (exs.includes(ex)) return cat;
+    }
+    return "Other";
+  };
+  recentWorkouts.forEach(w => {
+    const cat = getCategory(w.exercise);
+    groupCount[cat] = (groupCount[cat] || 0) + 1;
+  });
+
+  const maxCount = Math.max(...Object.values(groupCount), 1);
+  const classified = {};
+  Object.entries(groupCount).forEach(([cat, cnt]) => {
+    const ratio = cnt / maxCount;
+    if (ratio >= 0.6) classified[cat] = "balanced";
+    else if (ratio >= 0.4) classified[cat] = "lower_frequency";
+    else classified[cat] = "significantly_lower_frequency";
+  });
+
+  return { hasEnoughHistory: true, groupCount, classified, daySpan: Math.min(daySpan, 28) };
+}
+
+// Build structured context string for the AI Coach
+function buildStructuredContext(workouts, categories, user) {
+  if (!workouts || workouts.length === 0) return "The user has not logged any workouts yet.";
+
+  const exercises = [...new Set(workouts.map(w => w.exercise))];
+  const lines = [`User: ${user.username}`];
+
+  if (user.goal) {
+    lines.push(`Primary goal: ${user.goal.replace(/_/g, " ")}`);
+    if (user.goal === "improve_area" && user.focus_areas?.length > 0) {
+      lines.push(`Focus areas: ${user.focus_areas.join(", ")}`);
+    }
+  } else {
+    lines.push("Primary goal: unspecified (provide balanced coaching)");
+  }
+
+  lines.push(`Total sessions logged: ${workouts.length}`);
+  lines.push(`Total exercises tracked: ${exercises.length}`);
+  lines.push("");
+
+  // Exercise trends
+  lines.push("--- EXERCISE TRENDS ---");
+  exercises.forEach(ex => {
+    const trend = getExerciseTrend(ex, workouts);
+    if (trend.classification === "insufficient_data") {
+      lines.push(`${ex}: ${trend.reason}`);
+    } else {
+      lines.push(`${ex}:`);
+      lines.push(`  Sessions: ${trend.sessionCount} | Span: ${trend.daySpan} days | Method: ${trend.method}`);
+      if (trend.method === "weighted") {
+        lines.push(`  Earlier est. 1RM: ${trend.earlier1RM} lbs | Recent est. 1RM: ${trend.recent1RM} lbs | Change: ${trend.oneRMChangePct}%`);
+        if (trend.referenceWeight) {
+          lines.push(`  Comparable reps at ${trend.referenceWeight} lbs — Earlier: ${trend.compRepEarlier} | Recent: ${trend.compRepRecent} | Change: ${trend.compRepChange}`);
+        }
+        lines.push(`  Volume — Earlier avg: ${trend.earlierVol} lbs | Recent avg: ${trend.recentVol} lbs | Change: ${trend.volChangePct}%`);
+      } else {
+        lines.push(`  Reps — Earlier avg: ${trend.earlierReps} | Recent avg: ${trend.recentReps} | Change: ${trend.repChangePct}%`);
+      }
+      lines.push(`  Trend: ${trend.classification} | Reason: ${trend.reason}`);
+    }
+  });
+
+  lines.push("");
+
+  // Muscle balance
+  lines.push("--- MUSCLE GROUP BALANCE (last 28 days) ---");
+  const balance = getMuscleBalanceReport(workouts, categories);
+  if (!balance.hasEnoughHistory) {
+    lines.push(balance.reason);
+  } else {
+    Object.entries(balance.groupCount).sort((a,b)=>b[1]-a[1]).forEach(([cat, cnt]) => {
+      lines.push(`  ${cat}: ${cnt} sessions (${balance.classified[cat].replace(/_/g," ")})`);
+    });
+  }
+
+  return lines.join("\n");
+}
+
 // ─── Coach Tab ────────────────────────────────────────────────────────────────
 function CoachTab({ workouts, categories, user }) {
   const [messages, setMessages] = useState([]);
@@ -1506,56 +2141,8 @@ function CoachTab({ workouts, categories, user }) {
   const [initialized, setInitialized] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Build workout summary for AI context
-  const buildContext = () => {
-    if (!workouts || workouts.length === 0) return "The user has not logged any workouts yet.";
-
-    // Muscle group frequency
-    const groupCount = {};
-    const exerciseLastWeight = {};
-    const exerciseWeightByDate = {};
-
-    workouts.forEach(w => {
-      const setsArr = Array.isArray(w.sets) ? w.sets : [];
-      // Find category
-      let foundCat = "Other";
-      for (const [cat, exs] of Object.entries(categories)) {
-        if (exs.includes(w.exercise)) { foundCat = cat; break; }
-      }
-      groupCount[foundCat] = (groupCount[foundCat] || 0) + 1;
-
-      // Track weight over time per exercise
-      const maxW = setsArr.length > 0 ? Math.max(...setsArr.map(s => s.weight)) : 0;
-      if (!exerciseWeightByDate[w.exercise]) exerciseWeightByDate[w.exercise] = [];
-      exerciseWeightByDate[w.exercise].push({ date: w.date, maxWeight: maxW });
-      exerciseLastWeight[w.exercise] = maxW;
-    });
-
-    // Find plateaus (no weight increase in last 2 entries)
-    const plateaus = [];
-    Object.entries(exerciseWeightByDate).forEach(([ex, entries]) => {
-      const sorted = entries.sort((a, b) => a.date.localeCompare(b.date));
-      if (sorted.length >= 2) {
-        const last = sorted[sorted.length - 1];
-        const prev = sorted[sorted.length - 2];
-        if (last.maxWeight <= prev.maxWeight) plateaus.push({ exercise: ex, weight: last.maxWeight });
-      }
-    });
-
-    // Find least trained muscle groups
-    const allGroups = Object.keys(categories);
-    const leastTrained = allGroups.filter(g => !groupCount[g] || groupCount[g] < 2);
-
-    const totalSessions = workouts.length;
-    const recentWorkouts = workouts.slice(0, 5).map(w => `${w.exercise} on ${w.date}`).join(", ");
-
-    return `User: ${user.username}
-Total sessions logged: ${totalSessions}
-Recent workouts: ${recentWorkouts}
-Sessions per muscle group: ${Object.entries(groupCount).map(([g, c]) => `${g}: ${c}`).join(", ")}
-Undertrained groups (less than 2 sessions): ${leastTrained.join(", ") || "none"}
-Exercises with no recent weight increase: ${plateaus.map(p => `${p.exercise} (stuck at ${p.weight} lbs)`).join(", ") || "none detected"}`;
-  };
+  // Build structured context using analysis helpers
+  const buildContext = () => buildStructuredContext(workouts, categories, user);
 
   const sendMessage = async (userMessage, isInitial = false) => {
     const context = buildContext();
@@ -1570,19 +2157,29 @@ Exercises with no recent weight increase: ${plateaus.map(p => `${p.exercise} (st
     setLoading(true);
 
     try {
-      const systemPrompt = `You are Iron Log's AI coach. You are a knowledgeable, encouraging, and direct fitness coach. You speak in plain simple English. No jargon. No em dashes. Short paragraphs. You have access to the user's workout data below.
+      const systemPrompt = `You are Iron Log's AI coach. You are knowledgeable, encouraging, and direct. Plain simple English. No jargon. No em dashes. Short paragraphs.
 
-Your job:
-1. Analyze their training and give specific actionable advice
-2. Identify muscle imbalances and suggest corrections
-3. Challenge them when you see no progress
-4. Ask questions to understand what is holding them back
-5. Motivate them genuinely based on their actual data, not generic quotes
-6. Reference their specific exercises and numbers when giving advice
+You receive structured workout evidence. Your job is to reason FROM this evidence, not to assume conclusions before reading it.
 
-Always be direct and specific. Never give vague advice. If they are stuck on a weight, tell them exactly what to do.
+Rules you must follow:
+- Never claim someone has plateaued unless the trend data says possible_plateau.
+- Never call a muscle group undertrained. Describe frequency factually: "Lower body has appeared less frequently in your recent training."
+- When trend is stable, do not treat it as a failure. Describe it honestly.
+- When data is insufficient, say so. Do not invent analysis from thin air.
+- Do not compare different exercises as equivalent.
+- Never interpret one poor session as regression.
+- Volume alone is not proof of progress.
+- Total reps alone are not proof of strength progress.
 
-User workout data:
+How to use the user's goal:
+- gain_strength: Lead with estimated 1RM trends and weight progression. De-emphasize volume.
+- build_muscle: Emphasize comparable-load reps, progressive overload, training consistency, muscle-group distribution.
+- maintain: Stable performance is a success, not a warning sign. Do not push the user to constantly increase.
+- improve_area: Surface training frequency and progression for their selected focus areas first.
+- general_fitness: Balanced coaching. Do not aggressively push weight increases or criticize frequency.
+- not_sure or unspecified: Neutral, balanced coaching. Mention once that setting a goal can make recommendations more specific.
+
+Structured workout evidence:
 ${context}`;
 
       const apiMessages = isInitial
@@ -1878,6 +2475,14 @@ export default function App() {
   );
 
   if (!user) return <LoginScreen onLogin={handleLogin} />;
+
+  // Goal gate — required before entering the main app
+  if (!user.goal) return (
+    <GoalOnboarding user={user} onComplete={(updatedUser) => {
+      setUser(updatedUser);
+      localStorage.setItem("iron_log_user", JSON.stringify(updatedUser));
+    }} />
+  );
 
   return (
     <div style={{ fontFamily: "'Poppins',sans-serif", minHeight: "100vh", background: "#0d0d0d", color: "#ffffff", paddingBottom: 80 }}>
