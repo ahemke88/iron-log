@@ -1225,6 +1225,241 @@ function ProgressTab({ workouts, categories }) {
   );
 }
 
+
+// ─── Cardio Categories & Logger ───────────────────────────────────────────────
+const CARDIO_CATEGORIES = {
+  "Machines": ["Treadmill","Stair Climber","Elliptical","Rowing Machine","Stationary Bike","Air Bike","Ski Erg","Jacob's Ladder"],
+  "HIIT": ["Circuit Training","Tabata","Jump Rope","Battle Ropes","Box Jumps","Burpees","Sprint Intervals","Sled Push","Sled Pull","Kettlebell Swings"],
+  "Outdoor": ["Running","Walking","Cycling","Swimming","Hiking","Trail Run","Sprints"],
+  "Classes and Other": ["Yoga","Pilates","Boxing","Kickboxing","CrossFit","Dance","Spin Class","Martial Arts"]
+};
+
+function CardioLogger({ user, date, onSave, customCardio, setCustomCardio }) {
+  const [selCat, setSelCat] = useState(null);
+  const [selAct, setSelAct] = useState("");
+  const [customAct, setCustomAct] = useState("");
+  const [customCat, setCustomCat] = useState("Machines");
+  const [duration, setDuration] = useState("");
+  const [distance, setDistance] = useState("");
+  const [distUnit, setDistUnit] = useState("miles");
+  const [intensity, setIntensity] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const allCats = useMemo(() => {
+    const m = {};
+    Object.entries(CARDIO_CATEGORIES).forEach(([cat, acts]) => { m[cat] = [...acts]; });
+    (customCardio || []).forEach(({ name, category }) => {
+      if (!m[category]) m[category] = [];
+      if (!m[category].includes(name)) m[category].push(name);
+    });
+    return m;
+  }, [customCardio]);
+
+  const currentActs = selCat ? (allCats[selCat] || []) : [];
+
+  const validate = () => {
+    const errs = {};
+    if (!customAct.trim() && !selAct) errs.activity = "please select or enter a cardio activity";
+    if (!duration || Number(duration) <= 0) errs.duration = "please enter duration";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
+    setSaving(true);
+    const actName = customAct.trim() || selAct;
+    try {
+      if (customAct.trim()) {
+        const exists = (customCardio || []).find(c => c.name.toLowerCase() === customAct.trim().toLowerCase());
+        if (!exists) {
+          const { data } = await supabase.from("custom_cardio").insert({ username: user.username, name: customAct.trim(), category: customCat }).select();
+          if (data) setCustomCardio(prev => [...prev, data[0]]);
+        }
+      }
+      const { data } = await supabase.from("cardio_sessions").insert({
+        username: user.username, date, activity: actName,
+        category: selCat || customCat,
+        duration_mins: Number(duration),
+        distance: distance ? Number(distance) : null,
+        distance_unit: distance ? distUnit : null,
+        intensity: intensity || null
+      }).select();
+      if (data && data[0]) onSave(data[0]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+      setSelAct(""); setCustomAct(""); setDistance(""); setIntensity(null); setDuration("");
+    } catch (e) { alert("Error saving. Please try again."); }
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      {/* Category */}
+      <div style={{ marginBottom: 18 }}>
+        <label className="lbl">Category</label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {Object.keys(CARDIO_CATEGORIES).map(cat => (
+            <button key={cat} onClick={() => { setSelCat(cat); setSelAct(""); }}
+              style={{ padding: "14px 10px", borderRadius: 14, border: `1.5px solid ${selCat === cat ? "#00c805" : "rgba(255,255,255,.08)"}`, background: selCat === cat ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: selCat === cat ? "#00c805" : "#aaaaaa", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+        {errors.activity && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.activity}</p>}
+      </div>
+
+      {/* Subcategory chips */}
+      {selCat && (
+        <div style={{ marginBottom: 18 }}>
+          <label className="lbl">{selCat}</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {currentActs.map(act => (
+              <button key={act} onClick={() => { setSelAct(act); setCustomAct(""); }}
+                style={{ padding: "8px 14px", borderRadius: 20, border: `1.5px solid ${selAct === act ? "#00c805" : "rgba(255,255,255,.1)"}`, background: selAct === act ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: selAct === act ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+                {act}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Custom activity */}
+      <div style={{ marginBottom: 18 }}>
+        <label className="lbl">Or enter a custom activity</label>
+        <input className="field" value={customAct} onChange={e => { setCustomAct(e.target.value); setSelAct(""); }} placeholder="e.g. Paddle boarding" />
+        {customAct.trim() && (
+          <div style={{ marginTop: 10 }}>
+            <label className="lbl">Save under</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {Object.keys(CARDIO_CATEGORIES).map(cat => (
+                <button key={cat} onClick={() => setCustomCat(cat)}
+                  style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${customCat === cat ? "#00c805" : "rgba(255,255,255,.1)"}`, background: customCat === cat ? "rgba(0,200,5,.1)" : "rgba(22,22,22,.98)", color: customCat === cat ? "#00c805" : "#cccccc", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Duration (required) */}
+      <div style={{ marginBottom: 18 }}>
+        <label className="lbl">Duration (minutes) <span style={{ color: "#ff4444" }}>*</span></label>
+        <input type="number" className="field" value={duration} onChange={e => setDuration(e.target.value)}
+          placeholder="e.g. 45" inputMode="numeric" style={{ textAlign: "center", fontSize: 22, fontWeight: 700 }} />
+        {errors.duration && <p style={{ fontSize: 11, color: "#ff4444", marginTop: 6 }}>* {errors.duration}</p>}
+      </div>
+
+      {/* Distance (optional) */}
+      <div style={{ marginBottom: 18 }}>
+        <label className="lbl">Distance <span style={{ color: "#444444", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input type="number" className="field" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" style={{ flex: 1 }} />
+          <div style={{ display: "flex", background: "rgba(10,10,10,.9)", borderRadius: 12, padding: 4, gap: 2 }}>
+            {["miles","km"].map(u => (
+              <button key={u} onClick={() => setDistUnit(u)}
+                style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, background: distUnit === u ? "rgba(255,255,255,.1)" : "none", color: distUnit === u ? "#ffffff" : "#555555" }}>
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Intensity (optional) */}
+      <div style={{ marginBottom: 22 }}>
+        <label className="lbl">Intensity <span style={{ color: "#444444", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: "flex", gap: 10 }}>
+          {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
+            <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
+              style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.08)"}`, background: intensity === lvl ? bg : "rgba(22,22,22,.98)", color: intensity === lvl ? color : "#666666", fontFamily: "'Poppins',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              {lvl}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={saving}
+        style={{ background: "#00c805", border: "none", borderRadius: 14, padding: 14, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", opacity: saving ? .7 : 1 }}>
+        {saving ? "Saving..." : saved ? "Saved!" : "Save Cardio Session"}
+      </button>
+    </div>
+  );
+}
+
+// ─── Edit Cardio Modal ────────────────────────────────────────────────────────
+function EditCardioModal({ session, onSave, onDelete, onClose }) {
+  const [activity, setActivity] = useState(session.activity);
+  const [duration, setDuration] = useState(String(session.duration_mins));
+  const [distance, setDistance] = useState(String(session.distance || ""));
+  const [distUnit, setDistUnit] = useState(session.distance_unit || "miles");
+  const [intensity, setIntensity] = useState(session.intensity || null);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!duration || Number(duration) <= 0) return;
+    setSaving(true);
+    try {
+      const updates = { activity: activity.trim(), duration_mins: Number(duration), distance: distance ? Number(distance) : null, distance_unit: distance ? distUnit : null, intensity: intensity || null };
+      const { error } = await supabase.from("cardio_sessions").update(updates).eq("id", session.id);
+      if (error) throw new Error(error.message);
+      onSave({ ...session, ...updates });
+    } catch (e) { alert("Error saving."); }
+    setSaving(false);
+  };
+
+  const del = async () => {
+    if (!window.confirm("Delete this session?")) return;
+    try { await supabase.from("cardio_sessions").delete().eq("id", session.id); onDelete(session.id); }
+    catch (e) { alert("Error deleting."); }
+  };
+
+  return (
+    <div className="overlay">
+      <div style={{ background: "rgba(18,18,18,.98)", border: "1.5px solid rgba(255,255,255,.1)", borderRadius: 22, width: "100%", maxWidth: 420, padding: 26, maxHeight: "85vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffffff" }}>Edit Cardio</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 22, color: "#555555", cursor: "pointer" }}>×</button>
+        </div>
+        <p style={{ fontSize: 11, color: "#444444", marginBottom: 18 }}>{formatDate(session.date)}</p>
+        <div style={{ marginBottom: 14 }}><label className="lbl">Activity</label><input value={activity} onChange={e => setActivity(e.target.value)} className="field" /></div>
+        <div style={{ marginBottom: 14 }}><label className="lbl">Duration (minutes)</label><input type="number" value={duration} onChange={e => setDuration(e.target.value)} className="field" style={{ textAlign: "center", fontSize: 20, fontWeight: 700 }} /></div>
+        <div style={{ marginBottom: 14 }}>
+          <label className="lbl">Distance <span style={{ color: "#444444", fontWeight: 400, textTransform: "none" }}>(optional)</span></label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <input type="number" value={distance} onChange={e => setDistance(e.target.value)} className="field" placeholder="0.0" style={{ flex: 1 }} />
+            <div style={{ display: "flex", background: "rgba(10,10,10,.9)", borderRadius: 12, padding: 4, gap: 2 }}>
+              {["miles","km"].map(u => (
+                <button key={u} onClick={() => setDistUnit(u)} style={{ padding: "8px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, background: distUnit === u ? "rgba(255,255,255,.1)" : "none", color: distUnit === u ? "#ffffff" : "#555555" }}>{u}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label className="lbl">Intensity <span style={{ color: "#444444", fontWeight: 400, textTransform: "none" }}>(optional)</span></label>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[["Easy","#00c805","rgba(0,200,5,.1)"],["Moderate","#f0b429","rgba(240,180,40,.1)"],["Hard","#ff4444","rgba(255,68,68,.1)"]].map(([lvl, color, bg]) => (
+              <button key={lvl} onClick={() => setIntensity(intensity === lvl ? null : lvl)}
+                style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: `1.5px solid ${intensity === lvl ? color : "rgba(255,255,255,.1)"}`, background: intensity === lvl ? bg : "rgba(18,18,18,.98)", color: intensity === lvl ? color : "#666666", fontFamily: "'Poppins',sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                {lvl}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={save} disabled={saving} style={{ background: "#00c805", border: "none", borderRadius: 12, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", color: "#000000", width: "100%", marginBottom: 10 }}>
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        <button onClick={del} style={{ background: "rgba(255,68,68,.08)", border: "1.5px solid rgba(255,68,68,.25)", borderRadius: 12, padding: 13, fontFamily: "'Poppins',sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#ff4444", width: "100%" }}>
+          Delete Session
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── About Tab ────────────────────────────────────────────────────────────────
 function AboutTab() {
   return (
